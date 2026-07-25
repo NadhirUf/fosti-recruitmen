@@ -5,8 +5,8 @@ Source Teknik Informatika, UMS), mengikuti persis struktur & konten yang ada
 di screenshot: Hero, Tentang, 3 Divisi (Riset & Teknologi, Keorganisasian,
 Hubungan Publik), dan Form Pendaftaran.
 fosti-recruitment/
-├── frontend/   React + TypeScript + Vite + Tailwind (tampilan + animasi scroll)
-└── backend/    Node.js + TypeScript (API pendaftaran + database + rate limit)
+├── frontend/ React + TypeScript + Vite + Tailwind (tampilan + animasi scroll)
+└── backend/ Node.js + TypeScript (API pendaftaran + database + rate limit)
 
 ## Kenapa stack ini?
 
@@ -34,7 +34,7 @@ npm run dev        # jalan di http://localhost:4000
 
 > Butuh **Node.js 22.5 ke atas** (pakai `node:sqlite`). Cek versi dengan
 > `node -v`. Kalau muncul warning `ExperimentalWarning: SQLite is an
-> experimental feature`, itu normal dan aman diabaikan.
+experimental feature`, itu normal dan aman diabaikan.
 
 ### 2. Frontend
 
@@ -72,11 +72,11 @@ di-center di semua ukuran layar.
 
 ## API Backend
 
-| Method | Endpoint         | Keterangan                              |
-|--------|------------------|------------------------------------------|
-| POST   | `/api/register`  | Kirim pendaftaran baru                    |
-| GET    | `/api/health`    | Cek server hidup (untuk uptime monitor)   |
-| GET    | `/api/stats`     | Jumlah total pendaftar saat ini           |
+| Method | Endpoint        | Keterangan                              |
+| ------ | --------------- | --------------------------------------- |
+| POST   | `/api/register` | Kirim pendaftaran baru                  |
+| GET    | `/api/health`   | Cek server hidup (untuk uptime monitor) |
+| GET    | `/api/stats`    | Jumlah total pendaftar saat ini         |
 
 Validasi field `POST /api/register` (semua dicek di server, bukan cuma di
 frontend, supaya tidak bisa dibypass):
@@ -107,16 +107,16 @@ TOTAL=1500 CONCURRENCY=100 npm run loadtest     # terminal 2
 **Hasil aktual** (1.500 "peserta" simulasi, 100 request bersamaan per
 gelombang, tiap peserta disimulasikan datang dari IP berbeda seperti kondisi
 nyata):
-Total request       : 1500
-Durasi total         : 1.84 s
-Throughput           : 817.4 req/s
-Sukses (201)         : 1500
-Duplikat (409)       : 0
-Rate-limited (429)   : 0
-Error lain           : 0
-Latency p50          : 69.2 ms
-Latency p95          : 220.7 ms
-Latency p99          : 277.5 ms
+Total request : 1500
+Durasi total : 1.84 s
+Throughput : 817.4 req/s
+Sukses (201) : 1500
+Duplikat (409) : 0
+Rate-limited (429) : 0
+Error lain : 0
+Latency p50 : 69.2 ms
+Latency p95 : 220.7 ms
+Latency p99 : 277.5 ms
 
 Artinya: kalau 1.500 mahasiswa daftar dalam waktu berdekatan (misal rame-rame
 begitu pengumuman recruitment dibuka), server masih sanggup melayani semua
@@ -164,11 +164,11 @@ Logo besar di section Hero (`src/components/HeroLogo.tsx`) dibangun dari teks
 asli (bukan file gambar rata) supaya fill & stroke tiap huruf bisa diatur
 persis, sesuai spesifikasi desain:
 
-| Bagian | Font           | Fill                | Stroke                  |
-|--------|----------------|----------------------|--------------------------|
-| `F`    | Space Grotesk  | `#FFFFFF` (solid)   | `#FFE2E2`, warp miring   |
-| `OS`   | Baloo 2        | `#000000` 12% opacity | `#FF2F2F` (merah)      |
-| `TI`   | Inter Bold     | transparan (0%)     | `#FFFFFF` (hollow)       |
+| Bagian | Font          | Fill                  | Stroke                 |
+| ------ | ------------- | --------------------- | ---------------------- |
+| `F`    | Space Grotesk | `#FFFFFF` (solid)     | `#FFE2E2`, warp miring |
+| `OS`   | Baloo 2       | `#000000` 12% opacity | `#FF2F2F` (merah)      |
+| `TI`   | Inter Bold    | transparan (0%)       | `#FFFFFF` (hollow)     |
 
 Gaya ini didefinisikan di `src/index.css` lewat class `.hero-logo-f`,
 `.hero-logo-os`, `.hero-logo-ti`. Loop merah di belakangnya tetap pakai aset
