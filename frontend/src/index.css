@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+  /* Cegah scrollbar horizontal tipis yang muncul dari elemen w-screen
+     (100vw ikut menghitung lebar scrollbar vertikal, jadi kadang sedikit
+     lebih lebar dari viewport asli). */
+  overflow-x: hidden;
+}
+
+body {
+  font-family: "Inter", system-ui, sans-serif;
+  background-color: #050505;
+  overflow-x: hidden;
+}
+#tentang,
+#divisi,
+#timeline,
+#pendaftaran,
+#divisi-riset,
+#divisi-keorganisasian,
+#divisi-humas {
+  scroll-margin-top: 88px;
+}
+
+/* ---------- Animasi scroll-reveal ---------- */
+/* State awal (sebelum elemen masuk viewport) diset lewat class .reveal,
+   lalu class .reveal-visible ditambahkan oleh IntersectionObserver
+   (lihat src/hooks/useScrollReveal.ts) */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ---------- Animasi saat nav link diklik ---------- */
+@keyframes nav-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.12);
+    color: #e10600;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-nav-pulse {
+  animation: nav-pulse 0.4s ease-out;
+}
+
+/* ---------- Logo hero "FOSTI" - sesuai spec Figma ---------- */
+/* F: warp/miring, fill putih solid + stroke pink pucat tipis */
+.hero-logo-f {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  color: #ffffff;
+  -webkit-text-stroke: 2px #ffe2e2;
+  text-stroke: 2px #ffe2e2;
+  transform: skewX(-10deg) scaleY(1.05);
+  display: inline-block;
+}
+
+/* OS: font Baloo, fill hitam 12% (nyaris transparan) + stroke merah penuh */
+.hero-logo-os {
+  font-family: "Baloo 2", sans-serif;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.12);
+  -webkit-text-stroke: 2px #ff2f2f;
+  text-stroke: 2px #ff2f2f;
+  display: inline-block;
+}
+
+/* TI: font Inter Bold, fill transparan + stroke putih penuh (hollow) */
+.hero-logo-ti {
+  font-family: "Inter", sans-serif;
+  font-weight: 800;
+  color: transparent;
+  -webkit-text-stroke: 2px #ffffff;
+  text-stroke: 2px #ffffff;
+  display: inline-block;
+}
+
+/* ---------- Efek judul "glitch/echo" pada section Divisi ---------- */
+.echo-title {
+  position: relative;
+  display: inline-block;
+}
+
+.echo-title::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0.42em;
+  width: 100%;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.35);
+  z-index: -1;
+  pointer-events: none;
+}

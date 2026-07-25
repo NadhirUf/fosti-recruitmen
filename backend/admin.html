@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<title>Admin - Rekap Pendaftar FOSTI</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #0d0d0d; color: #eee; padding: 2rem; max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; }
+  input { padding: .6rem; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; width: 100%; box-sizing: border-box; }
+  button { padding: .6rem 1.2rem; border-radius: 8px; border: none; background: #e10600; color: #fff; font-weight: 600; cursor: pointer; margin-top: .6rem; }
+  table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
+  th, td { text-align: left; padding: .5rem .7rem; border-bottom: 1px solid #262626; }
+  th { color: #999; font-size: .8rem; text-transform: uppercase; }
+  .total { font-size: 2rem; font-weight: 700; margin: 1rem 0; }
+  .bar { background: #e10600; height: 8px; border-radius: 4px; }
+  .row-bar-bg { background: #1a1a1a; border-radius: 4px; width: 100%; height: 8px; }
+  #app { display: none; }
+  #err { color: #ff6b6b; margin-top: .5rem; }
+</style>
+</head>
+<body>
+  <h1>🗂 Rekap Pendaftar FOSTI</h1>
+
+  <div id="login">
+    <p>Masukkan admin token (dari file <code>.env</code> backend, variabel <code>ADMIN_TOKEN</code>):</p>
+    <input type="password" id="token" placeholder="Admin token" />
+    <button onclick="load()">Masuk</button>
+    <div id="err"></div>
+  </div>
+
+  <div id="app">
+    <div class="total" id="total"></div>
+    <button onclick="downloadCsv()">⬇ Download CSV (semua data)</button>
+    <table>
+      <thead><tr><th>Program Studi</th><th>Jumlah</th><th></th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+<script>
+  const API_BASE = ""; // isi kalau backend beda origin, misal "https://api.fosti-ums.com"
+  let TOKEN = localStorage.getItem("fosti_admin_token") || "";
+
+  async function load() {
+    TOKEN = document.getElementById("token").value.trim() || TOKEN;
+    const err = document.getElementById("err");
+    err.textContent = "";
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/stats`, {
+        headers: { Authorization: `Bearer ${TOKEN}` },
+      });
+      if (res.status === 401) {
+        err.textContent = "Token salah atau ADMIN_TOKEN belum di-set di backend.";
+        return;
+      }
+      const json = await res.json();
+      if (!json.success) { err.textContent = "Gagal memuat data."; return; }
+
+      localStorage.setItem("fosti_admin_token", TOKEN);
+      document.getElementById("login").style.display = "none";
+      document.getElementById("app").style.display = "block";
+
+      const { total, byProdi } = json.data;
+      document.getElementById("total").textContent = `${total} total pendaftar`;
+
+      const max = Math.max(...byProdi.map((p) => p.total), 1);
+      const tbody = document.getElementById("tbody");
+      tbody.innerHTML = byProdi.map((p) => `
+        <tr>
+          <td>${p.programStudi}</td>
+          <td>${p.total}</td>
+          <td style="width:40%"><div class="row-bar-bg"><div class="bar" style="width:${(p.total/max*100).toFixed(0)}%"></div></div></td>
+        </tr>
+      `).join("");
+    } catch (e) {
+      err.textContent = "Tidak bisa terhubung ke backend. Cek URL API_BASE di admin.html.";
+    }
+  }
+
+  function downloadCsv() {
+    const url = `${API_BASE}/api/admin/export`;
+    fetch(url, { headers: { Authorization: `Bearer ${TOKEN}` } })
+      .then((r) => r.blob())
+      .then((blob) => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "pendaftar-fosti.csv";
+        a.click();
+      });
+  }
+
+  if (TOKEN) load();
+</script>
+</body>
+</html>
