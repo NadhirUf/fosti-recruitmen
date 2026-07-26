@@ -67,7 +67,7 @@ export default function RegistrationForm() {
   }
 
   return (
-    <section id="pendaftaran" className="px-6 py-24">
+    <section id="pendaftaran" className="px-6 py-14 sm:py-24">
       <div
         ref={formRef}
         className="reveal mx-auto max-w-2xl rounded-3xl border border-base-border bg-base-panel/60 p-8 sm:p-10"
