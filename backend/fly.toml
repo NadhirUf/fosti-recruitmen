@@ -1,0 +1,26 @@
+# Ganti "app" di bawah dengan nama unik (belum dipakai orang lain di Fly.io),
+# misal "fosti-recruitmen-backend-<inisial-kamu>".
+app = "fosti-recruitmen-backend"
+primary_region = "sin"  # Singapore, paling dekat ke Indonesia
+
+[build]
+
+[env]
+  PORT = "8080"
+  CORS_ORIGIN = "*"   # ganti ke domain frontend kamu setelah frontend online
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+[[mounts]]
+  source = "fosti_data"
+  destination = "/app/data"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
