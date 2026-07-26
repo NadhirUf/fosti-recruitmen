@@ -95,7 +95,7 @@ export default function DivisionShowcase({
         </div>
       </div>
 
-      <div className="relative mt-10 h-[60vh] min-h-[420px] w-screen overflow-hidden sm:h-[70vh]">
+      <div className="relative mt-10 h-[42vh] min-h-[300px] w-screen overflow-hidden sm:h-[70vh]">
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-base-bg to-transparent sm:w-32" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-base-bg to-transparent sm:w-32" />
 
@@ -115,7 +115,7 @@ export default function DivisionShowcase({
 
 function PhotoCard({ src, index }: { src: string | null; index: number }) {
   return (
-    <div className="relative h-full w-[220px] shrink-0 overflow-hidden sm:w-[300px]">
+    <div className="relative h-full w-[260px] shrink-0 overflow-hidden rounded-2xl sm:w-[300px]">
       {src ? (
         <img
           src={src}
