@@ -13,7 +13,7 @@ export default function About() {
   });
 
   return (
-    <section id="tentang" className="px-6 py-14 sm:py-24">
+    <section id="tentang" className="overflow-x-hidden px-6 py-24">
       <div className="mx-auto max-w-content">
         {/* Wordmark "F...OS...TI" mengapit & menimpa foto tim, sesuai desain
             Figma: F & TI nyelip di belakang foto (vector asli, layer warna +

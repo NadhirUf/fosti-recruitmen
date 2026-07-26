@@ -52,22 +52,15 @@ function AnimatedTitle({
           : undefined
       }
     >
-      {text.split("").map((word, wi) => (
-        <span key={wi} className="inline-block whitespace-nowrap">
-          {word.split("").map((char, i) => (
-            <span
-              key={i}
-              className="inline-block transition-all duration-500 ease-out"
-              style={{
-                transitionDelay: `${(wi * 10 + i) * 25}ms`,
-                transform: visible ? "translateY(0)" : "translateY(1rem)",
-                opacity: visible ? 1 : 0,
-              }}
-            >
-              {char}
-            </span>
-          ))}
-          {wi < text.split(" ").length - 1 ? "\u00A0" : ""}
+      {text.split("").map((char, i) => (
+        <span
+          key={i}
+          className={`inline-block transition-all duration-500 ease-out ${
+            visible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+          }`}
+          style={{ transitionDelay: `${i * 25}ms` }}
+        >
+          {char === " " ? "\u00A0" : char}
         </span>
       ))}
     </h2>
