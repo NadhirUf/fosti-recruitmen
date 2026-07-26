@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { useScrollReveal } from "../hooks/useScrollReveal";
 
 interface DivisionShowcaseProps {
   id: string;
