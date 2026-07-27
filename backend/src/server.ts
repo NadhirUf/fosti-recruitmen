@@ -168,6 +168,14 @@ function handleAdminStats(req: IncomingMessage, res: ServerResponse) {
   return sendJson(res, 200, { success: true, data: { total, byProdi } });
 }
 
+function handleAdminList(req: IncomingMessage, res: ServerResponse) {
+  if (!isAdminAuthorized(req)) {
+    return sendJson(res, 401, { success: false, errors: "Unauthorized" });
+  }
+  const rows = getAllRegistrations();
+  return sendJson(res, 200, { success: true, data: rows });
+}
+
 function csvEscape(value: string): string {
   // Cegah CSV/formula injection: kalau diawali =, +, -, @ (bisa dianggap
   // formula sama Excel), tambahin apostrof di depan biar dianggap teks biasa.
@@ -197,7 +205,7 @@ function handleAdminExport(req: IncomingMessage, res: ServerResponse) {
       header.map((key) => csvEscape(String((r as any)[key] ?? ""))).join(","),
     ),
   ];
-  const csv = lines.join("\n");
+  const csv = "\uFEFF" + "sep=,\n" + lines.join("\n");
   res.writeHead(200, {
     "Content-Type": "text/csv; charset=utf-8",
     "Content-Disposition": `attachment; filename="pendaftar-fosti-${new Date().toISOString().slice(0, 10)}.csv"`,
@@ -232,6 +240,9 @@ const server = createServer(async (req, res) => {
     }
     if (req.method === "GET" && url.pathname === "/api/admin/stats") {
       return handleAdminStats(req, res);
+    }
+    if (req.method === "GET" && url.pathname === "/api/admin/list") {
+      return handleAdminList(req, res);
     }
     if (req.method === "GET" && url.pathname === "/api/admin/export") {
       return handleAdminExport(req, res);
