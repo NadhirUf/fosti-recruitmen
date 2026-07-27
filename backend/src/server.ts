@@ -16,6 +16,7 @@ import {
   countRegistrations,
   getStatsByProdi,
   getAllRegistrations,
+  deleteRegistrationById,
   DuplicateError,
 } from "./db.js";
 import { isRateLimited } from "./rateLimiter.js";
@@ -30,7 +31,7 @@ const MAX_BODY_BYTES = 10_000; // batas ukuran body -> cegah payload raksasa/DoS
 
 function setCors(res: ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 
@@ -176,6 +177,28 @@ function handleAdminList(req: IncomingMessage, res: ServerResponse) {
   return sendJson(res, 200, { success: true, data: rows });
 }
 
+function handleAdminDelete(
+  req: IncomingMessage,
+  res: ServerResponse,
+  idParam: string,
+) {
+  if (!isAdminAuthorized(req)) {
+    return sendJson(res, 401, { success: false, errors: "Unauthorized" });
+  }
+  const id = Number(idParam);
+  if (!Number.isInteger(id) || id <= 0) {
+    return sendJson(res, 400, { success: false, errors: "ID tidak valid" });
+  }
+  const deleted = deleteRegistrationById(id);
+  if (!deleted) {
+    return sendJson(res, 404, {
+      success: false,
+      errors: "Pendaftar tidak ditemukan",
+    });
+  }
+  return sendJson(res, 200, { success: true, data: { id } });
+}
+
 function csvEscape(value: string): string {
   // Cegah CSV/formula injection: kalau diawali =, +, -, @ (bisa dianggap
   // formula sama Excel), tambahin apostrof di depan biar dianggap teks biasa.
@@ -243,6 +266,13 @@ const server = createServer(async (req, res) => {
     }
     if (req.method === "GET" && url.pathname === "/api/admin/list") {
       return handleAdminList(req, res);
+    }
+    if (
+      req.method === "DELETE" &&
+      url.pathname.startsWith("/api/admin/registrations/")
+    ) {
+      const id = url.pathname.split("/").pop() ?? "";
+      return handleAdminDelete(req, res, id);
     }
     if (req.method === "GET" && url.pathname === "/api/admin/export") {
       return handleAdminExport(req, res);

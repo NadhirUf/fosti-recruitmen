@@ -64,12 +64,11 @@ const allRegistrationsStmt = db.prepare(`
   ORDER BY created_at ASC
 `);
 
-const findByNimStmt = db.prepare(
-  `SELECT id FROM registrations WHERE nim = ?`
-);
+const findByNimStmt = db.prepare(`SELECT id FROM registrations WHERE nim = ?`);
 const findByEmailStmt = db.prepare(
-  `SELECT id FROM registrations WHERE email = ?`
+  `SELECT id FROM registrations WHERE email = ?`,
 );
+const deleteByIdStmt = db.prepare(`DELETE FROM registrations WHERE id = ?`);
 
 export class DuplicateError extends Error {
   constructor(public field: "nim" | "email") {
@@ -79,7 +78,7 @@ export class DuplicateError extends Error {
 
 export function insertRegistration(
   input: RegistrationInput,
-  ipAddress: string
+  ipAddress: string,
 ): RegistrationRecord {
   // Cek duplikat lebih dulu supaya pesan error jelas field mana yang bentrok
   // (UNIQUE constraint di DB tetap jadi pengaman terakhir kalau ada race).
@@ -94,7 +93,7 @@ export function insertRegistration(
       input.whatsapp,
       input.programStudi,
       input.alamatDomisili,
-      ipAddress
+      ipAddress,
     );
 
     return {
@@ -124,5 +123,10 @@ export function getStatsByProdi(): { programStudi: string; total: number }[] {
 
 /** Seluruh data pendaftar (dipakai untuk halaman admin & export CSV). */
 export function getAllRegistrations(): RegistrationRecord[] {
-  return allRegistrationsStmt.all() as RegistrationRecord[];
+  return allRegistrationsStmt.all() as unknown as RegistrationRecord[];
+}
+/** Hapus satu pendaftar berdasarkan id. Return true kalau ada baris yang kehapus. */
+export function deleteRegistrationById(id: number): boolean {
+  const info = deleteByIdStmt.run(id);
+  return info.changes > 0;
 }

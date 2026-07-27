@@ -120,6 +120,7 @@
               <th>Program Studi</th>
               <th>Alamat Domisili</th>
               <th>Daftar Pada</th>
+              <th>Aksi</th>
             </tr>
           </thead>
           <tbody id="listBody"></tbody>
@@ -180,16 +181,17 @@
             listBody.innerHTML = listJson.data
               .map(
                 (r) => `
-          <tr>
-            <td>${r.namaLengkap}</td>
-            <td>${r.nim}</td>
-            <td>${r.email}</td>
-            <td>${r.whatsapp}</td>
-            <td>${r.programStudi}</td>
-            <td>${r.alamatDomisili}</td>
-            <td>${new Date(r.createdAt).toLocaleString("id-ID")}</td>
-          </tr>
-        `,
+  <tr>
+    <td>${r.namaLengkap}</td>
+    <td>${r.nim}</td>
+    <td>${r.email}</td>
+    <td>${r.whatsapp}</td>
+    <td>${r.programStudi}</td>
+    <td>${r.alamatDomisili}</td>
+    <td>${new Date(r.createdAt).toLocaleString("id-ID")}</td>
+    <td><button onclick="hapusPendaftar(${r.id}, '${r.namaLengkap.replace(/'/g, "\\'")}')" style="background:#333;padding:0.4rem 0.8rem;font-size:0.8rem;margin:0">🗑 Hapus</button></td>
+  </tr>
+`,
               )
               .join("");
           }
@@ -209,6 +211,29 @@
             a.download = "pendaftar-fosti.csv";
             a.click();
           });
+      }
+      async function hapusPendaftar(id, nama) {
+        if (
+          !confirm(
+            `Yakin mau hapus pendaftar "${nama}"? Ini tidak bisa dibatalkan.`,
+          )
+        ) {
+          return;
+        }
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/registrations/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${TOKEN}` },
+          });
+          const json = await res.json();
+          if (!json.success) {
+            alert("Gagal menghapus: " + (json.errors ?? "Unknown error"));
+            return;
+          }
+          load(); // refresh tabel & stats
+        } catch (e) {
+          alert("Tidak bisa terhubung ke backend.");
+        }
       }
 
       if (TOKEN) load();
