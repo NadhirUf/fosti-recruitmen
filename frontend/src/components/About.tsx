@@ -38,17 +38,17 @@ export default function About() {
                 supaya tiap bagian saling tindih dikit, senada. */}
           <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
             <div className="flex items-center select-none opacity-90">
-              <div className="relative z-10 -mr-[9px] w-[85px] sm:-mr-[30px] sm:w-[255px] md:-mr-[38px] md:w-[322px]">
+              <div className="relative z-10 -mr-[18px] w-[177px] sm:-mr-[30px] sm:w-[255px] md:-mr-[38px] md:w-[322px]">
                 <FWarpLogo />
               </div>
 
               {/* OS - tetap paling atas (z-30) menimpa F & TI. Lebar naik
-    seiring F membesar, biar tingginya tetap sama-sama besar. */}
-              <div className="relative z-30 w-[125px] sm:w-[380px] md:w-[480px]">
+                    seiring F membesar, biar tingginya tetap sama-sama besar. */}
+              <div className="relative z-30 w-[263px] sm:w-[380px] md:w-[480px]">
                 <OSLogo />
               </div>
 
-              <div className="relative z-10 -ml-[8px] w-[71px] sm:-ml-[24px] sm:w-[222px] md:-ml-[32px] md:w-[284px]">
+              <div className="relative z-10 -ml-[17px] w-[149px] sm:-ml-[24px] sm:w-[222px] md:-ml-[32px] md:w-[284px]">
                 <TIWarpLogo />
               </div>
             </div>
