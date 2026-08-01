@@ -1,9 +1,5 @@
 # FOSTI UMS - Website Open Recruitment
 
-Implementasi penuh (frontend + backend) dari desain Figma FOSTI (Forum Open
-Source Teknik Informatika, UMS), mengikuti persis struktur & konten yang ada
-di screenshot: Hero, Tentang, 3 Divisi (Riset & Teknologi, Keorganisasian,
-Hubungan Publik), dan Form Pendaftaran.
 fosti-recruitment/
 ├── frontend/ React + TypeScript + Vite + Tailwind (tampilan + animasi scroll)
 └── backend/ Node.js + TypeScript (API pendaftaran + database + rate limit)
