@@ -22,7 +22,7 @@ export default function FeaturedSplit({ title, items }: FeaturedSplitProps) {
       )}
 
       {/* Full-bleed: lepas dari max-w-content, nempel ujung layar */}
-      <div className="mt-8 flex w-screen flex-co gap-1 px-1 sm:flex-row sm:gap-2:px-2">
+      <div className="mt-8 flex w-screen flex-col gap-1 px-1 sm:flex-row sm:gap-2 sm:px-2">
         {items.map((item, i) => (
           <SplitPanel key={i} {...item} />
         ))}
