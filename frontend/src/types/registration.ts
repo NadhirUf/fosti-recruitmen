@@ -1,4 +1,7 @@
+export type KategoriPendaftar = "mahasiswa" | "umum";
+
 export interface RegistrationFormData {
+  kategori: KategoriPendaftar;
   namaLengkap: string;
   nim: string;
   email: string;

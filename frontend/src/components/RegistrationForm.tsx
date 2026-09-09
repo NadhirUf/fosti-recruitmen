@@ -3,11 +3,13 @@ import { useScrollReveal } from "../hooks/useScrollReveal";
 import { submitRegistration } from "../lib/api";
 import { FACULTIES } from "../data/prodi";
 import type {
+  KategoriPendaftar,
   RegistrationFieldErrors,
   RegistrationFormData,
 } from "../types/registration";
 
 const EMPTY_FORM: RegistrationFormData = {
+  kategori: "mahasiswa",
   namaLengkap: "",
   nim: "",
   email: "",
@@ -25,18 +27,27 @@ export default function RegistrationForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState<string>("");
 
-  // Fakultas cuma dipakai buat MENYARING pilihan prodi di dropdown kedua,
-  // nilai yang dikirim ke server tetap cuma nama prodi (form.programStudi)
-  // -> struktur data & backend gak perlu berubah.
   const [selectedFaculty, setSelectedFaculty] = useState<string>("");
   const prodiOptions =
     FACULTIES.find((f) => f.name === selectedFaculty)?.prodi ?? [];
+
+  const isMahasiswa = form.kategori === "mahasiswa";
 
   function update<K extends keyof RegistrationFormData>(
     key: K,
     value: RegistrationFormData[K],
   ) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function handleKategoriChange(kategori: KategoriPendaftar) {
+    setForm((prev) => ({
+      ...prev,
+      kategori,
+      nim: "",
+      email: "",
+    }));
+    setFieldErrors({});
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -80,7 +91,35 @@ export default function RegistrationForm() {
         </h2>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => handleKategoriChange("mahasiswa")}
+              className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
+                isMahasiswa
+                  ? "border-brand-red bg-brand-red/10 text-white"
+                  : "border-white/10 text-white/50"
+              }`}
+            >
+              Mahasiswa UMS
+            </button>
+            <button
+              type="button"
+              onClick={() => handleKategoriChange("umum")}
+              className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
+                !isMahasiswa
+                  ? "border-brand-red bg-brand-red/10 text-white"
+                  : "border-white/10 text-white/50"
+              }`}
+            >
+              Umum
+            </button>
+          </div>
+          {fieldErrors.kategori && (
+            <p className="text-xs text-brand-red">{fieldErrors.kategori}</p>
+          )}
+
+          <div className={`grid gap-5 ${isMahasiswa ? "sm:grid-cols-2" : ""}`}>
             <Field
               label="Nama Lengkap"
               placeholder="Charles Leclerc"
@@ -89,27 +128,31 @@ export default function RegistrationForm() {
               error={fieldErrors.namaLengkap}
               autoComplete="name"
             />
-            <Field
-              label="NIM"
-              placeholder="Contoh: A2000222"
-              value={form.nim}
-              onChange={(v) =>
-                update(
-                  "nim",
-                  v
-                    .toUpperCase()
-                    .replace(/[^A-Z0-9]/g, "")
-                    .slice(0, 15),
-                )
-              }
-              error={fieldErrors.nim}
-            />
+            {isMahasiswa && (
+              <Field
+                label="NIM"
+                placeholder="Contoh: A2000222"
+                value={form.nim}
+                onChange={(v) =>
+                  update(
+                    "nim",
+                    v
+                      .toUpperCase()
+                      .replace(/[^A-Z0-9]/g, "")
+                      .slice(0, 15),
+                  )
+                }
+                error={fieldErrors.nim}
+              />
+            )}
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
             <Field
               label="Email Aktif"
-              placeholder="L2xxxxxxxx@student.ums.ac.id"
+              placeholder={
+                isMahasiswa ? "L2xxxxxxxx@student.ums.ac.id" : "nama@email.com"
+              }
               value={form.email}
               onChange={(v) => update("email", v)}
               error={fieldErrors.email}
@@ -135,7 +178,7 @@ export default function RegistrationForm() {
               value={selectedFaculty}
               onChange={(v) => {
                 setSelectedFaculty(v);
-                update("programStudi", ""); // reset prodi tiap ganti fakultas
+                update("programStudi", "");
               }}
               options={FACULTIES.map((f) => f.name)}
             />
