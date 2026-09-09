@@ -1,4 +1,5 @@
-backend/.env
+.vercel
+.env*
 backend/node_modules/
 backend/dist/
 backend/data/

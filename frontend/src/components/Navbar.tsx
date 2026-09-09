@@ -9,6 +9,7 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [activeHref, setActiveHref] = useState<string>("#tentang");
   const [indicator, setIndicator] = useState({ left: 0, width: 0 });
   const [pulseHref, setPulseHref] = useState<string | null>(null);
@@ -73,6 +74,7 @@ export default function Navbar() {
   function handleNavClick(href: string) {
     setPulseHref(href);
     window.setTimeout(() => setPulseHref(null), 400);
+    setMobileOpen(false);
     const target = document.getElementById(href.replace("#", ""));
     target?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -134,7 +136,50 @@ export default function Navbar() {
         >
           Daftar Sekarang
         </a>
+
+        <button
+          type="button"
+          aria-label="Buka menu"
+          onClick={() => setMobileOpen((v) => !v)}
+          className="ml-3 flex h-9 w-9 flex-col items-center justify-center gap-1.5 md:hidden"
+        >
+          <span
+            className={`h-0.5 w-6 bg-white transition-all duration-300 ${mobileOpen ? "translate-y-2 rotate-45" : ""}`}
+          />
+          <span
+            className={`h-0.5 w-6 bg-white transition-all duration-300 ${mobileOpen ? "opacity-0" : ""}`}
+          />
+          <span
+            className={`h-0.5 w-6 bg-white transition-all duration-300 ${mobileOpen ? "-translate-y-2 -rotate-45" : ""}`}
+          />
+        </button>
       </nav>
+
+      {/* Panel menu mobile - cuma nongol di layar kecil, dan cuma pas dibuka */}
+      {mobileOpen && (
+        <div className="border-t border-base-border bg-base-bg/95 backdrop-blur-sm md:hidden">
+          <ul className="flex flex-col gap-1 px-6 py-4">
+            {NAV_LINKS.map((link) => (
+              <li key={link.href}>
+                <a
+                  href={link.href}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavClick(link.href);
+                  }}
+                  className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    activeHref === link.href
+                      ? "bg-white/10 text-white"
+                      : "text-white/70 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </header>
   );
 }

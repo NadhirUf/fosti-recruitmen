@@ -35,7 +35,7 @@ function AnimatedTitle({
   }, []);
 
   const baseClass =
-    "font-sans text-3xl font-extrabold uppercase leading-none tracking-tight sm:text-5xl";
+    "font-sans text-2xl font-extrabold uppercase leading-tight tracking-tight sm:text-5xl sm:leading-none";
 
   return (
     <h2
@@ -52,15 +52,22 @@ function AnimatedTitle({
           : undefined
       }
     >
-      {text.split("").map((char, i) => (
-        <span
-          key={i}
-          className={`inline-block transition-all duration-500 ease-out ${
-            visible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-          }`}
-          style={{ transitionDelay: `${i * 25}ms` }}
-        >
-          {char === " " ? "\u00A0" : char}
+      {text.split(" ").map((word, wi) => (
+        <span key={wi} className="inline-block whitespace-nowrap">
+          {word.split("").map((char, i) => (
+            <span
+              key={i}
+              className="inline-block transition-all duration-500 ease-out"
+              style={{
+                transitionDelay: `${(wi * 10 + i) * 25}ms`,
+                transform: visible ? "translateY(0)" : "translateY(1rem)",
+                opacity: visible ? 1 : 0,
+              }}
+            >
+              {char}
+            </span>
+          ))}
+          {"\u00A0"}
         </span>
       ))}
     </h2>
@@ -115,7 +122,7 @@ export default function DivisionShowcase({
 
 function PhotoCard({ src, index }: { src: string | null; index: number }) {
   return (
-    <div className="relative h-full w-[260px] shrink-0 overflow-hidden rounded-2xl sm:w-[300px]">
+    <div className="relative h-full w-[180px] shrink-0 overflow-hidden rounded-xl sm:w-[300px] sm:rounded-2xl">
       {src ? (
         <img
           src={src}

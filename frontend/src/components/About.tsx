@@ -16,8 +16,8 @@ export default function About() {
     <section id="tentang" className="overflow-x-hidden px-6 py-24">
       <div className="mx-auto max-w-content">
         {/* Wordmark "F...OS...TI" mengapit & menimpa foto tim, sesuai desain
-            Figma: F & TI nyelip di belakang foto (vector asli, layer warna +
-            transparan), OS jadi coretan SVG merah yang menimpa foto. */}
+              Figma: F & TI nyelip di belakang foto (vector asli, layer warna +
+              transparan), OS jadi coretan SVG merah yang menimpa foto. */}
         <div ref={artRef} className="reveal relative mx-auto max-w-3xl">
           <div
             ref={photoRef}
@@ -33,9 +33,9 @@ export default function About() {
           </div>
 
           {/* Wordmark "F" + "OS" + "TI" dikelompokkan jadi satu flex row biar
-              rapat & center sebagai satu kesatuan (bukan lagi ditempel ke
-              tepi kiri/kanan foto). Margin negatif dipakai buat "kerning"
-              supaya tiap bagian saling tindih dikit, senada. */}
+                rapat & center sebagai satu kesatuan (bukan lagi ditempel ke
+                tepi kiri/kanan foto). Margin negatif dipakai buat "kerning"
+                supaya tiap bagian saling tindih dikit, senada. */}
           <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
             <div className="flex items-center select-none opacity-90">
               <div className="relative z-10 -mr-[18px] w-[177px] sm:-mr-[30px] sm:w-[255px] md:-mr-[38px] md:w-[322px]">
@@ -43,7 +43,7 @@ export default function About() {
               </div>
 
               {/* OS - tetap paling atas (z-30) menimpa F & TI. Lebar naik
-                  seiring F membesar, biar tingginya tetap sama-sama besar. */}
+                    seiring F membesar, biar tingginya tetap sama-sama besar. */}
               <div className="relative z-30 w-[263px] sm:w-[380px] md:w-[480px]">
                 <OSLogo />
               </div>
