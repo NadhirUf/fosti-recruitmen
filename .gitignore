@@ -1,0 +1,9 @@
+backend/.env
+backend/node_modules/
+backend/dist/
+backend/data/
+frontend/node_modules/
+frontend/dist/
+backend/patch_admin.py
+backend/patch_v2.py
+backend/patch_v3.py

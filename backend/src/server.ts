@@ -1,5 +1,3 @@
-// HARUS baris pertama: baca file .env dan isi ke process.env sebelum modul
-// lain (db.ts, notify.ts, dst) sempat membaca process.env.X miliknya.
 import "dotenv/config";
 
 import {
@@ -7,7 +5,7 @@ import {
   type IncomingMessage,
   type ServerResponse,
 } from "node:http";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateRegistration } from "./validators.js";
@@ -16,18 +14,37 @@ import {
   countRegistrations,
   getStatsByProdi,
   getAllRegistrations,
+  getFailedEmailRegistrations,
+  getRegistrationById,
   deleteRegistrationById,
   DuplicateError,
 } from "./db.js";
 import { isRateLimited } from "./rateLimiter.js";
-import { notifyNewRegistration } from "./notify.js";
+import { notifyNewRegistration, resendEmailToRegistration } from "./notify.js";
 import type { ApiResponse, RegistrationRecord } from "./types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT ?? 4000);
 const ALLOWED_ORIGIN = process.env.CORS_ORIGIN ?? "*";
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? "";
-const MAX_BODY_BYTES = 10_000; // batas ukuran body -> cegah payload raksasa/DoS sederhana
+const MAX_BODY_BYTES = 10_000;
+
+let rateLimitHitCount = 0;
+const RESPONSE_TIMES_MAX = 50;
+const responseTimes: number[] = [];
+
+function recordResponseTime(ms: number) {
+  responseTimes.push(ms);
+  if (responseTimes.length > RESPONSE_TIMES_MAX) {
+    responseTimes.shift();
+  }
+}
+
+function getAvgResponseMs(): number {
+  if (responseTimes.length === 0) return 0;
+  const sum = responseTimes.reduce((a, b) => a + b, 0);
+  return Math.round((sum / responseTimes.length) * 10) / 10;
+}
 
 function setCors(res: ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
@@ -86,6 +103,7 @@ async function handleRegister(req: IncomingMessage, res: ServerResponse) {
 
   const { limited, retryAfterSeconds } = isRateLimited(ip);
   if (limited) {
+    rateLimitHitCount++;
     res.setHeader("Retry-After", String(retryAfterSeconds));
     return sendJson(res, 429, {
       success: false,
@@ -114,8 +132,6 @@ async function handleRegister(req: IncomingMessage, res: ServerResponse) {
 
   try {
     const record: RegistrationRecord = insertRegistration(result.data, ip);
-    // Fire-and-forget: gagal kirim notifikasi TIDAK boleh menggagalkan
-    // pendaftaran itu sendiri (data sudah aman tersimpan di DB).
     notifyNewRegistration(record).catch((err) =>
       console.error("[notify] gagal kirim notifikasi:", err),
     );
@@ -152,8 +168,6 @@ function handleStats(_req: IncomingMessage, res: ServerResponse) {
   });
 }
 
-/** Cek header `Authorization: Bearer <ADMIN_TOKEN>`. Kalau ADMIN_TOKEN belum
-    di-set di .env, admin endpoint otomatis TERKUNCI (fail-safe, bukan fail-open). */
 function isAdminAuthorized(req: IncomingMessage): boolean {
   if (!ADMIN_TOKEN) return false;
   const header = req.headers["authorization"];
@@ -175,6 +189,48 @@ function handleAdminList(req: IncomingMessage, res: ServerResponse) {
   }
   const rows = getAllRegistrations();
   return sendJson(res, 200, { success: true, data: rows });
+}
+
+function handleAdminFailedEmails(req: IncomingMessage, res: ServerResponse) {
+  if (!isAdminAuthorized(req)) {
+    return sendJson(res, 401, { success: false, errors: "Unauthorized" });
+  }
+  const rows = getFailedEmailRegistrations();
+  return sendJson(res, 200, { success: true, data: rows });
+}
+
+async function handleAdminResend(
+  req: IncomingMessage,
+  res: ServerResponse,
+  idParam: string,
+) {
+  if (!isAdminAuthorized(req)) {
+    return sendJson(res, 401, { success: false, errors: "Unauthorized" });
+  }
+  const id = Number(idParam);
+  if (!Number.isInteger(id) || id <= 0) {
+    return sendJson(res, 400, { success: false, errors: "ID tidak valid" });
+  }
+  const record = getRegistrationById(id);
+  if (!record) {
+    return sendJson(res, 404, {
+      success: false,
+      errors: "Pendaftar tidak ditemukan",
+    });
+  }
+  try {
+    await resendEmailToRegistration(record);
+    return sendJson(res, 200, {
+      success: true,
+      data: { id, status: "sent" },
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return sendJson(res, 502, {
+      success: false,
+      errors: `Gagal kirim ulang email: ${message}`,
+    });
+  }
 }
 
 function handleAdminDelete(
@@ -200,8 +256,6 @@ function handleAdminDelete(
 }
 
 function csvEscape(value: string): string {
-  // Cegah CSV/formula injection: kalau diawali =, +, -, @ (bisa dianggap
-  // formula sama Excel), tambahin apostrof di depan biar dianggap teks biasa.
   const safe = /^[=+\-@]/.test(value) ? `'${value}` : value;
   if (/[",\n]/.test(safe)) return `"${safe.replace(/"/g, '""')}"`;
   return safe;
@@ -235,8 +289,62 @@ function handleAdminExport(req: IncomingMessage, res: ServerResponse) {
   });
   res.end(csv);
 }
+const DATA_DIR = join(__dirname, "..", "data");
+const STATS_FILE = join(DATA_DIR, "system_stats.json");
+const RESTART_FLAG = join(DATA_DIR, "restart_requested");
+
+function handleAdminSystemStats(req: IncomingMessage, res: ServerResponse) {
+  if (!isAdminAuthorized(req)) {
+    return sendJson(res, 401, { success: false, errors: "Unauthorized" });
+  }
+  try {
+    let watchdogData: Record<string, unknown> = {
+      healthy: null,
+      message: "Watchdog belum menulis data",
+    };
+    if (existsSync(STATS_FILE)) {
+      const raw = readFileSync(STATS_FILE, "utf-8");
+      watchdogData = JSON.parse(raw);
+    }
+    const data = {
+      ...watchdogData,
+      rateLimitHitCount,
+      avgResponseMs: getAvgResponseMs(),
+    };
+    return sendJson(res, 200, { success: true, data });
+  } catch (err) {
+    console.error("[admin] gagal baca system stats:", err);
+    return sendJson(res, 500, {
+      success: false,
+      errors: "Gagal membaca status sistem",
+    });
+  }
+}
+
+function handleAdminRestart(req: IncomingMessage, res: ServerResponse) {
+  if (!isAdminAuthorized(req)) {
+    return sendJson(res, 401, { success: false, errors: "Unauthorized" });
+  }
+  try {
+    writeFileSync(RESTART_FLAG, new Date().toISOString());
+    return sendJson(res, 200, {
+      success: true,
+      data: { message: "Restart diminta, server akan restart dalam beberapa detik" },
+    });
+  } catch (err) {
+    console.error("[admin] gagal minta restart:", err);
+    return sendJson(res, 500, {
+      success: false,
+      errors: "Gagal meminta restart",
+    });
+  }
+}
 
 const server = createServer(async (req, res) => {
+  const requestStartTime = Date.now();
+  res.on("finish", () => {
+    recordResponseTime(Date.now() - requestStartTime);
+  });
   setCors(res);
 
   if (req.method === "OPTIONS") {
@@ -267,6 +375,16 @@ const server = createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/admin/list") {
       return handleAdminList(req, res);
     }
+    if (req.method === "GET" && url.pathname === "/api/admin/failed-emails") {
+      return handleAdminFailedEmails(req, res);
+    }
+    if (
+      req.method === "POST" &&
+      url.pathname.startsWith("/api/admin/resend/")
+    ) {
+      const id = url.pathname.split("/").pop() ?? "";
+      return await handleAdminResend(req, res, id);
+    }
     if (
       req.method === "DELETE" &&
       url.pathname.startsWith("/api/admin/registrations/")
@@ -276,6 +394,12 @@ const server = createServer(async (req, res) => {
     }
     if (req.method === "GET" && url.pathname === "/api/admin/export") {
       return handleAdminExport(req, res);
+    }
+    if (req.method === "GET" && url.pathname === "/api/admin/system-stats") {
+      return handleAdminSystemStats(req, res);
+    }
+    if (req.method === "POST" && url.pathname === "/api/admin/restart") {
+      return handleAdminRestart(req, res);
     }
     return sendJson(res, 404, {
       success: false,
@@ -299,12 +423,16 @@ server.listen(PORT, () => {
     `  GET  /api/admin/stats   (butuh header Authorization: Bearer <ADMIN_TOKEN>)`,
   );
   console.log(
+    `  GET  /api/admin/failed-emails  (butuh header Authorization: Bearer <ADMIN_TOKEN>)`,
+  );
+  console.log(
+    `  POST /api/admin/resend/:id     (butuh header Authorization: Bearer <ADMIN_TOKEN>)`,
+  );
+  console.log(
     `  GET  /api/admin/export  (butuh header Authorization: Bearer <ADMIN_TOKEN>)`,
   );
 });
 
-// Graceful shutdown supaya request yang sedang berjalan tidak terputus
-// paksa saat deploy ulang / container di-restart.
 process.on("SIGTERM", () => {
   console.log("SIGTERM diterima, menutup server...");
   server.close(() => process.exit(0));

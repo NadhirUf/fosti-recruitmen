@@ -10,14 +10,8 @@ const DB_PATH = join(DB_DIR, "fosti.db");
 
 mkdirSync(DB_DIR, { recursive: true });
 
-// node:sqlite bersifat SYNCHRONOUS. Ini justru menguntungkan untuk kasus
-// pendaftaran: setiap write otomatis ter-serialize satu-persatu oleh Node
-// event loop, jadi kita TIDAK PERLU mutex/lock manual untuk mencegah race
-// condition saat banyak peserta submit form bersamaan (lihat load-test/).
 export const db = new DatabaseSync(DB_PATH);
 
-// journal_mode WAL supaya banyak pembacaan (GET /api/stats) tidak
-// memblokir proses tulis (POST /api/register), dan sebaliknya.
 db.exec("PRAGMA journal_mode = WAL;");
 db.exec("PRAGMA synchronous = NORMAL;");
 db.exec("PRAGMA busy_timeout = 5000;");
@@ -41,10 +35,32 @@ db.exec(`
   ON registrations (created_at);
 `);
 
+// --- Migrasi: tambah kolom pelacak status email kalau belum ada ---
+// Aman dijalankan tiap start server (dicek dulu pakai PRAGMA table_info
+// supaya tidak error kalau kolomnya sudah pernah ditambahkan sebelumnya).
+const existingColumns = (
+  db.prepare("PRAGMA table_info(registrations)").all() as { name: string }[]
+).map((c) => c.name);
+
+if (!existingColumns.includes("email_status")) {
+  // Default 'sent' untuk baris LAMA yang sudah ada (asumsi sudah pernah
+  // dikirim/di-resend manual). Baris BARU akan eksplisit di-set 'pending'
+  // oleh insertRegistration di bawah.
+  db.exec(
+    `ALTER TABLE registrations ADD COLUMN email_status TEXT NOT NULL DEFAULT 'sent'`,
+  );
+}
+if (!existingColumns.includes("email_error")) {
+  db.exec(`ALTER TABLE registrations ADD COLUMN email_error TEXT`);
+}
+if (!existingColumns.includes("email_sent_at")) {
+  db.exec(`ALTER TABLE registrations ADD COLUMN email_sent_at TEXT`);
+}
+
 const insertStmt = db.prepare(`
   INSERT INTO registrations
-    (nama_lengkap, nim, email, whatsapp, program_studi, alamat_domisili, ip_address)
-  VALUES (?, ?, ?, ?, ?, ?, ?)
+    (nama_lengkap, nim, email, whatsapp, program_studi, alamat_domisili, ip_address, email_status)
+  VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')
 `);
 
 const countStmt = db.prepare(`SELECT COUNT(*) AS total FROM registrations`);
@@ -59,9 +75,35 @@ const statsByProdiStmt = db.prepare(`
 const allRegistrationsStmt = db.prepare(`
   SELECT id, nama_lengkap AS namaLengkap, nim, email, whatsapp,
          program_studi AS programStudi, alamat_domisili AS alamatDomisili,
-         created_at AS createdAt
+         created_at AS createdAt, email_status AS emailStatus,
+         email_error AS emailError, email_sent_at AS emailSentAt
   FROM registrations
   ORDER BY created_at ASC
+`);
+
+const failedEmailsStmt = db.prepare(`
+  SELECT id, nama_lengkap AS namaLengkap, nim, email, whatsapp,
+         program_studi AS programStudi, alamat_domisili AS alamatDomisili,
+         created_at AS createdAt, email_status AS emailStatus,
+         email_error AS emailError, email_sent_at AS emailSentAt
+  FROM registrations
+  WHERE email_status != 'sent'
+  ORDER BY created_at ASC
+`);
+
+const getByIdStmt = db.prepare(`
+  SELECT id, nama_lengkap AS namaLengkap, nim, email, whatsapp,
+         program_studi AS programStudi, alamat_domisili AS alamatDomisili,
+         created_at AS createdAt, email_status AS emailStatus,
+         email_error AS emailError, email_sent_at AS emailSentAt
+  FROM registrations
+  WHERE id = ?
+`);
+
+const updateEmailStatusStmt = db.prepare(`
+  UPDATE registrations
+  SET email_status = ?, email_error = ?, email_sent_at = ?
+  WHERE id = ?
 `);
 
 const findByNimStmt = db.prepare(`SELECT id FROM registrations WHERE nim = ?`);
@@ -80,8 +122,6 @@ export function insertRegistration(
   input: RegistrationInput,
   ipAddress: string,
 ): RegistrationRecord {
-  // Cek duplikat lebih dulu supaya pesan error jelas field mana yang bentrok
-  // (UNIQUE constraint di DB tetap jadi pengaman terakhir kalau ada race).
   if (findByNimStmt.get(input.nim)) throw new DuplicateError("nim");
   if (findByEmailStmt.get(input.email)) throw new DuplicateError("email");
 
@@ -116,16 +156,32 @@ export function countRegistrations(): number {
   return row.total;
 }
 
-/** Rekap jumlah pendaftar per program studi, terurut dari yang terbanyak. */
 export function getStatsByProdi(): { programStudi: string; total: number }[] {
   return statsByProdiStmt.all() as { programStudi: string; total: number }[];
 }
 
-/** Seluruh data pendaftar (dipakai untuk halaman admin & export CSV). */
 export function getAllRegistrations(): RegistrationRecord[] {
   return allRegistrationsStmt.all() as unknown as RegistrationRecord[];
 }
-/** Hapus satu pendaftar berdasarkan id. Return true kalau ada baris yang kehapus. */
+
+export function getFailedEmailRegistrations(): RegistrationRecord[] {
+  return failedEmailsStmt.all() as unknown as RegistrationRecord[];
+}
+
+export function getRegistrationById(
+  id: number,
+): RegistrationRecord | undefined {
+  return getByIdStmt.get(id) as unknown as RegistrationRecord | undefined;
+}
+
+export function updateEmailStatus(
+  id: number,
+  status: "sent" | "failed",
+  error: string | null,
+): void {
+  updateEmailStatusStmt.run(status, error, new Date().toISOString(), id);
+}
+
 export function deleteRegistrationById(id: number): boolean {
   const info = deleteByIdStmt.run(id);
   return info.changes > 0;

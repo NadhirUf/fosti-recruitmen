@@ -8,13 +8,13 @@
  * - WhatsApp: Fonnte (https://fonnte.com) — opsional, buat kirim notifikasi
  *             WA otomatis DARI sistem (bukan tombol di email).
  *
- * Semuanya OPSIONAL: kalau kredensial belum di-set di .env, fungsi ini cuma
- * nge-log peringatan dan tidak melakukan apa-apa (tidak bikin error, tidak
- * menggagalkan proses pendaftaran).
+ * Status pengiriman EMAIL (bukan WhatsApp) di-track ke database lewat
+ * updateEmailStatus, supaya bisa dideteksi dan dikirim ulang dari admin panel.
  */
 
 import nodemailer from "nodemailer";
 import type { RegistrationRecord } from "./types.js";
+import { updateEmailStatus } from "./db.js";
 
 const GMAIL_USER = process.env.GMAIL_USER ?? "";
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD ?? "";
@@ -25,22 +25,20 @@ const RESEND_FROM = process.env.RESEND_FROM ?? "FOSTI UMS <onboarding@resend.dev
 
 const FONNTE_TOKEN = process.env.FONNTE_TOKEN ?? "";
 
-// Contact Person buat tombol konfirmasi WA di email. Nomor pakai format
-// internasional TANPA "+" atau "0" di depan (contoh: 08586920xxxx -> 62858692xxxx).
 const CP1_NAME = process.env.CP1_NAME ?? "";
 const CP1_WHATSAPP = process.env.CP1_WHATSAPP ?? "";
 const CP2_NAME = process.env.CP2_NAME ?? "";
 const CP2_WHATSAPP = process.env.CP2_WHATSAPP ?? "";
 
-/** Bikin link "click-to-chat" WhatsApp (wa.me) dengan pesan yang udah
-    keisi otomatis, dipersonalisasi per pendaftar. */
 function buildWaLink(cpName: string, cpNumber: string, record: RegistrationRecord): string {
   const message =
     `Assalamualaikum kak ${cpName}, Perkenalkan saya ${record.namaLengkap} ` +
     `dengan NIM ${record.nim} ingin konfirmasi bahwa saya telah melakukan ` +
-    `registrasi Oprec FOSTI.\n\n` +
+    `registrasi Oprec FOSTI 2026.\n\n` +
     `Berikut link kelengkapan berkas:\n` +
-    `1. Foto KTM: *sertakan file berupa foto ktm kamu.`;
+    `1. Link Up Twibbon: *isi dengan link twibbon kamu*\n` +
+    `2. Link Up Video: *isi dengan link video kamu*\n` +
+    `3. Foto KTM: *sertakan file berupa foto ktm kamu.*`;
   return `https://wa.me/${cpNumber}?text=${encodeURIComponent(message)}`;
 }
 
@@ -86,8 +84,7 @@ function emailHtml(record: RegistrationRecord): string {
   `;
 }
 
-async function sendEmail(record: RegistrationRecord): Promise<void> {
-  // Prioritas 1: Gmail (akun fostiums@gmail.com yang sudah ada)
+export async function sendEmail(record: RegistrationRecord): Promise<void> {
   if (gmailTransporter) {
     await gmailTransporter.sendMail({
       from: `"${GMAIL_SENDER_NAME}" <${GMAIL_USER}>`,
@@ -98,7 +95,6 @@ async function sendEmail(record: RegistrationRecord): Promise<void> {
     return;
   }
 
-  // Prioritas 2 (fallback): Resend, kalau Gmail belum di-set
   if (!RESEND_API_KEY) {
     console.warn("[notify] GMAIL_* atau RESEND_API_KEY belum di-set, lewati kirim email");
     return;
@@ -155,13 +151,38 @@ async function sendWhatsApp(record: RegistrationRecord): Promise<void> {
   }
 }
 
-/** Dipanggil setelah data pendaftar berhasil disimpan ke DB. Fire-and-forget
-    dari sisi caller — kegagalan di sini tidak boleh menggagalkan pendaftaran. */
+/** Dipakai tombol "Kirim Ulang" di admin panel. Melempar error kalau gagal
+    supaya endpoint admin bisa memberi respons yang jelas ke UI. */
+export async function resendEmailToRegistration(
+  record: RegistrationRecord,
+): Promise<void> {
+  try {
+    await sendEmail(record);
+    updateEmailStatus(record.id, "sent", null);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    updateEmailStatus(record.id, "failed", message);
+    throw err;
+  }
+}
+
+/** Dipanggil otomatis setelah data pendaftar berhasil disimpan ke DB.
+    Fire-and-forget dari sisi caller — kegagalan di sini tidak boleh
+    menggagalkan pendaftaran itu sendiri. Status email di-track ke DB
+    supaya bisa dideteksi & dikirim ulang lewat admin panel. */
 export async function notifyNewRegistration(record: RegistrationRecord): Promise<void> {
-  const results = await Promise.allSettled([sendEmail(record), sendWhatsApp(record)]);
-  results.forEach((r, i) => {
-    if (r.status === "rejected") {
-      console.error(`[notify] channel #${i} gagal:`, r.reason);
-    }
-  });
+  try {
+    await sendEmail(record);
+    updateEmailStatus(record.id, "sent", null);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[notify] gagal kirim email ke ${record.email}:`, err);
+    updateEmailStatus(record.id, "failed", message);
+  }
+
+  try {
+    await sendWhatsApp(record);
+  } catch (err) {
+    console.error(`[notify] gagal kirim WhatsApp ke ${record.whatsapp}:`, err);
+  }
 }

@@ -73,6 +73,131 @@
         color: #ff6b6b;
         margin-top: 0.5rem;
       }
+      .badge {
+        display: inline-block;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 700;
+      }
+      .badge-failed {
+        background: #4a1414;
+        color: #ff6b6b;
+      }
+      .badge-pending {
+        background: #4a3c14;
+        color: #ffd76b;
+      }
+      .resend-btn {
+        background: #14b8a6;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+        margin: 0;
+      }
+      .resend-btn:disabled {
+        background: #333;
+        cursor: not-allowed;
+      }
+      #failedSection {
+        margin-top: 2rem;
+        padding: 1rem;
+        border: 1px solid #4a1414;
+        border-radius: 8px;
+        background: #150808;
+      }
+      #systemSection {
+        margin-top: 2rem;
+        padding: 1rem;
+        border: 1px solid #262626;
+        border-radius: 8px;
+        background: #141414;
+        animation: fadeIn 0.4s ease;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 0.8rem;
+        margin: 1rem 0;
+      }
+      .stat-box {
+        background: #1a1a1a;
+        border-radius: 8px;
+        padding: 0.8rem;
+        text-align: center;
+      }
+      .stat-box .val {
+        font-size: 1.4rem;
+        font-weight: 700;
+      }
+      .stat-box .lbl {
+        font-size: 0.75rem;
+        color: #999;
+        text-transform: uppercase;
+        margin-top: 0.2rem;
+      }
+      .stat-bar-bg {
+        width: 100%;
+        height: 6px;
+        background: #2a2a2a;
+        border-radius: 4px;
+        margin-top: 0.5rem;
+        overflow: hidden;
+      }
+      .stat-bar-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: 4px;
+        background: #4ade80;
+        transition: width 0.8s ease, background-color 0.4s ease;
+      }
+      .stat-bar-fill.warn {
+        background: #facc15;
+      }
+      .stat-bar-fill.danger {
+        background: #ff6b6b;
+      }
+      .status-ok {
+        color: #4ade80;
+      }
+      .status-bad {
+        color: #ff6b6b;
+      }
+      .restart-btn {
+        background: #ff6b6b;
+      }
+      .restart-btn:disabled {
+        background: #333;
+        cursor: not-allowed;
+      }
+      #warnBanner {
+        display: none;
+        margin-top: 1rem;
+        padding: 0.9rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+      }
+      #warnBanner.warn {
+        display: block;
+        background: #2a1f05;
+        border: 1px solid #7a5c0a;
+        color: #facc15;
+        animation: fadeIn 0.4s ease;
+      }
+      #warnBanner.danger {
+        display: block;
+        background: #2a0a0a;
+        border: 1px solid #7a1414;
+        color: #ff6b6b;
+        animation: fadeIn 0.4s ease, pulseWarn 1.6s ease-in-out infinite;
+      }
+      @keyframes pulseWarn {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(255,107,107,0.35); }
+        50% { box-shadow: 0 0 0 6px rgba(255,107,107,0); }
+      }
     </style>
   </head>
   <body>
@@ -91,6 +216,67 @@
     <div id="app">
       <div class="total" id="total"></div>
       <button onclick="downloadCsv()">⬇ Download CSV (semua data)</button>
+      <div id="systemSection">
+        <h2 style="margin-top: 0; font-size: 1.1rem; color: #999">
+          🖥 Status Server
+        </h2>
+        <div id="systemStatusText" style="color: #999">Memuat...</div>
+        <div id="warnBanner"></div>
+        <div class="stat-grid" id="statGrid" style="display: none">
+          <div class="stat-box">
+            <div class="val" id="statCpu">-</div>
+            <div class="lbl">CPU</div>
+            <div class="stat-bar-bg"><div class="stat-bar-fill" id="barCpu"></div></div>
+          </div>
+          <div class="stat-box">
+            <div class="val" id="statMem">-</div>
+            <div class="lbl">Memory</div>
+            <div class="stat-bar-bg"><div class="stat-bar-fill" id="barMem"></div></div>
+          </div>
+          <div class="stat-box">
+            <div class="val" id="statDisk">-</div>
+            <div class="lbl">Disk</div>
+            <div class="stat-bar-bg"><div class="stat-bar-fill" id="barDisk"></div></div>
+          </div>
+          <div class="stat-box">
+            <div class="val" id="statFail">-</div>
+            <div class="lbl">Fail Count</div>
+          </div>
+          <div class="stat-box">
+            <div class="val" id="statRateLimit">-</div>
+            <div class="lbl">Rate Limit Hit</div>
+          </div>
+          <div class="stat-box">
+            <div class="val" id="statAvgResp">-</div>
+            <div class="lbl">Avg Respons</div>
+            <div class="stat-bar-bg"><div class="stat-bar-fill" id="barResp"></div></div>
+          </div>
+        </div>
+        <div style="font-size: 0.8rem; color: #666; margin-top: 0.5rem" id="statLastChecked"></div>
+        <button class="restart-btn" id="restartBtn" onclick="restartServer()">
+          🔄 Restart Server
+        </button>
+      </div>
+      <div id="failedSection">
+        <h2 style="margin-top: 0; font-size: 1.1rem; color: #ff6b6b">
+          ⚠️ Email Gagal / Belum Terkirim
+        </h2>
+        <p id="failedEmpty" style="color: #999; display: none">
+          Semua email sudah terkirim. 🎉
+        </p>
+        <table id="failedTable" style="display: none">
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th>Error</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="failedBody"></tbody>
+        </table>
+      </div>
 
       <h2 style="margin-top: 2rem; font-size: 1.1rem; color: #999">
         Rekap per Program Studi
@@ -119,6 +305,7 @@
               <th>WhatsApp</th>
               <th>Program Studi</th>
               <th>Alamat Domisili</th>
+              <th>Email</th>
               <th>Daftar Pada</th>
               <th>Aksi</th>
             </tr>
@@ -129,8 +316,16 @@
     </div>
 
     <script>
-      const API_BASE = ""; // isi kalau backend beda origin, misal "https://api.fosti-ums.com"
+      const API_BASE = "";
       let TOKEN = localStorage.getItem("fosti_admin_token") || "";
+
+      function emailStatusBadge(status) {
+        if (status === "failed")
+          return '<span class="badge badge-failed">Gagal</span>';
+        if (status === "pending")
+          return '<span class="badge badge-pending">Pending</span>';
+        return "✅ Terkirim";
+      }
 
       async function load() {
         TOKEN = document.getElementById("token").value.trim() || TOKEN;
@@ -172,6 +367,10 @@
       `,
             )
             .join("");
+
+          await loadFailedEmails();
+          await loadSystemStats();
+
           const listRes = await fetch(`${API_BASE}/api/admin/list`, {
             headers: { Authorization: `Bearer ${TOKEN}` },
           });
@@ -188,6 +387,7 @@
     <td>${r.whatsapp}</td>
     <td>${r.programStudi}</td>
     <td>${r.alamatDomisili}</td>
+    <td>${emailStatusBadge(r.emailStatus)}</td>
     <td>${new Date(r.createdAt).toLocaleString("id-ID")}</td>
     <td><button onclick="hapusPendaftar(${r.id}, '${r.namaLengkap.replace(/'/g, "\\'")}')" style="background:#333;padding:0.4rem 0.8rem;font-size:0.8rem;margin:0">🗑 Hapus</button></td>
   </tr>
@@ -198,6 +398,190 @@
         } catch (e) {
           err.textContent =
             "Tidak bisa terhubung ke backend. Cek URL API_BASE di admin.html.";
+        }
+      }
+      async function loadSystemStats() {
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/system-stats`, {
+            headers: { Authorization: `Bearer ${TOKEN}` },
+          });
+          const json = await res.json();
+          const statusText = document.getElementById("systemStatusText");
+          const grid = document.getElementById("statGrid");
+          const banner = document.getElementById("warnBanner");
+          if (!json.success || json.data.healthy === null) {
+            statusText.textContent = json.data?.message || "Data belum tersedia.";
+            grid.style.display = "none";
+            banner.className = "";
+            banner.innerHTML = "";
+            return;
+          }
+          const d = json.data;
+          statusText.innerHTML = d.healthy
+            ? '<span class="status-ok">✅ Server sehat</span>'
+            : '<span class="status-bad">⚠️ Server bermasalah</span>';
+          grid.style.display = "grid";
+          document.getElementById("statCpu").textContent = `${d.cpuPercent}%`;
+          document.getElementById("statMem").textContent = `${d.memPercent}%`;
+          document.getElementById("statDisk").textContent = `${d.diskPercent}%`;
+          document.getElementById("statFail").textContent = d.failCount;
+          document.getElementById("statRateLimit").textContent = d.rateLimitHitCount ?? 0;
+          document.getElementById("statAvgResp").textContent = `${d.avgResponseMs ?? 0}ms`;
+          document.getElementById("statLastChecked").textContent =
+            "Terakhir dicek: " + new Date(d.lastChecked).toLocaleString("id-ID");
+
+          setBar("barCpu", d.cpuPercent);
+          setBar("barMem", d.memPercent);
+          setBar("barDisk", d.diskPercent);
+          setBar("barResp", Math.min(((d.avgResponseMs ?? 0) / 3000) * 100, 100));
+
+          const reasons = [];
+          let level = "ok";
+          const checkThreshold = (label, val) => {
+            if (val >= 90) {
+              level = "danger";
+              reasons.push(`${label} sangat tinggi (${val}%)`);
+            } else if (val >= 70 && level !== "danger") {
+              level = "warn";
+              reasons.push(`${label} mulai tinggi (${val}%)`);
+            }
+          };
+          checkThreshold("CPU", d.cpuPercent);
+          checkThreshold("Memory", d.memPercent);
+          checkThreshold("Disk", d.diskPercent);
+          if (d.failCount >= 5) {
+            level = "danger";
+            reasons.push(`Fail count tinggi (${d.failCount}x)`);
+          } else if (d.failCount >= 2 && level !== "danger") {
+            level = "warn";
+            reasons.push(`Fail count mulai naik (${d.failCount}x)`);
+          }
+
+          const rl = d.rateLimitHitCount ?? 0;
+          if (rl >= 30) {
+            level = "danger";
+            reasons.push(`Rate limit sering ke-trigger (${rl}x) — kemungkinan diserbu/diserang`);
+          } else if (rl >= 10 && level !== "danger") {
+            level = "warn";
+            reasons.push(`Rate limit mulai sering ke-trigger (${rl}x)`);
+          }
+
+          const avgResp = d.avgResponseMs ?? 0;
+          if (avgResp >= 3000) {
+            level = "danger";
+            reasons.push(`Server sangat lambat merespons (${avgResp}ms)`);
+          } else if (avgResp >= 1000 && level !== "danger") {
+            level = "warn";
+            reasons.push(`Respons server mulai lambat (${avgResp}ms)`);
+          }
+
+          if (!d.healthy) {
+            level = "danger";
+            reasons.push("Watchdog menandai server tidak sehat");
+          }
+
+          if (level === "ok") {
+            banner.className = "";
+            banner.innerHTML = "";
+          } else {
+            banner.className = level;
+            const icon = level === "danger" ? "🚨" : "⚠️";
+            const title =
+              level === "danger" ? "Siap-siap restart server" : "Mulai perhatikan server";
+            banner.innerHTML = `<strong>${icon} ${title}</strong><br>${reasons.join(", ")}`;
+          }
+        } catch (e) {
+          document.getElementById("systemStatusText").textContent =
+            "Gagal memuat status server.";
+        }
+      }
+
+      function setBar(id, percent) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.style.width = `${Math.min(percent, 100)}%`;
+        el.classList.remove("warn", "danger");
+        if (percent >= 90) el.classList.add("danger");
+        else if (percent >= 70) el.classList.add("warn");
+      }
+
+      async function restartServer() {
+        if (!confirm("Yakin mau restart server? Website akan down beberapa detik.")) {
+          return;
+        }
+        const btn = document.getElementById("restartBtn");
+        btn.disabled = true;
+        btn.textContent = "Merestart...";
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/restart`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${TOKEN}` },
+          });
+          const json = await res.json();
+          if (!json.success) {
+            alert("Gagal restart: " + (json.errors ?? "Unknown error"));
+          } else {
+            alert("Restart diminta. Tunggu ~20 detik lalu refresh halaman ini.");
+          }
+        } catch (e) {
+          alert("Tidak bisa terhubung ke backend.");
+        } finally {
+          setTimeout(() => {
+            btn.disabled = false;
+            btn.textContent = "🔄 Restart Server";
+          }, 20000);
+        }
+      }
+      async function loadFailedEmails() {
+        const res = await fetch(`${API_BASE}/api/admin/failed-emails`, {
+          headers: { Authorization: `Bearer ${TOKEN}` },
+        });
+        const json = await res.json();
+        const table = document.getElementById("failedTable");
+        const empty = document.getElementById("failedEmpty");
+        const body = document.getElementById("failedBody");
+        if (!json.success || json.data.length === 0) {
+          table.style.display = "none";
+          empty.style.display = "block";
+          return;
+        }
+        empty.style.display = "none";
+        table.style.display = "table";
+        body.innerHTML = json.data
+          .map(
+            (r) => `
+  <tr id="failed-row-${r.id}">
+    <td>${r.namaLengkap}</td>
+    <td>${r.email}</td>
+    <td>${emailStatusBadge(r.emailStatus)}</td>
+    <td style="max-width:220px;font-size:0.8rem;color:#999;overflow-wrap:break-word">${r.emailError ?? "-"}</td>
+    <td><button class="resend-btn" onclick="resendEmail(${r.id}, this)">📤 Kirim Ulang</button></td>
+  </tr>
+`,
+          )
+          .join("");
+      }
+
+      async function resendEmail(id, btnEl) {
+        btnEl.disabled = true;
+        btnEl.textContent = "Mengirim...";
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/resend/${id}`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${TOKEN}` },
+          });
+          const json = await res.json();
+          if (!json.success) {
+            alert("Gagal kirim ulang: " + (json.errors ?? "Unknown error"));
+            btnEl.disabled = false;
+            btnEl.textContent = "📤 Kirim Ulang";
+            return;
+          }
+          await loadFailedEmails();
+        } catch (e) {
+          alert("Tidak bisa terhubung ke backend.");
+          btnEl.disabled = false;
+          btnEl.textContent = "📤 Kirim Ulang";
         }
       }
 
@@ -230,7 +614,7 @@
             alert("Gagal menghapus: " + (json.errors ?? "Unknown error"));
             return;
           }
-          load(); // refresh tabel & stats
+          load();
         } catch (e) {
           alert("Tidak bisa terhubung ke backend.");
         }
