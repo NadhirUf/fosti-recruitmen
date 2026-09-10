@@ -20,7 +20,7 @@ const EMPTY_FORM: RegistrationFormData = {
 
 type Status = "idle" | "submitting" | "success" | "error";
 
-const API_BASE = ""; // isi kalau frontend beda origin dengan backend
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 export default function RegistrationForm() {
   const formRef = useScrollReveal<HTMLDivElement>();
