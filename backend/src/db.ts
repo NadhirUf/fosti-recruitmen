@@ -36,16 +36,11 @@ db.exec(`
 `);
 
 // --- Migrasi: tambah kolom pelacak status email kalau belum ada ---
-// Aman dijalankan tiap start server (dicek dulu pakai PRAGMA table_info
-// supaya tidak error kalau kolomnya sudah pernah ditambahkan sebelumnya).
 const existingColumns = (
   db.prepare("PRAGMA table_info(registrations)").all() as { name: string }[]
 ).map((c) => c.name);
 
 if (!existingColumns.includes("email_status")) {
-  // Default 'sent' untuk baris LAMA yang sudah ada (asumsi sudah pernah
-  // dikirim/di-resend manual). Baris BARU akan eksplisit di-set 'pending'
-  // oleh insertRegistration di bawah.
   db.exec(
     `ALTER TABLE registrations ADD COLUMN email_status TEXT NOT NULL DEFAULT 'sent'`,
   );
@@ -55,6 +50,41 @@ if (!existingColumns.includes("email_error")) {
 }
 if (!existingColumns.includes("email_sent_at")) {
   db.exec(`ALTER TABLE registrations ADD COLUMN email_sent_at TEXT`);
+}
+
+// --- Tabel settings: key-value sederhana untuk toggle dari admin panel ---
+db.exec(`
+  CREATE TABLE IF NOT EXISTS settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
+`);
+
+const getSettingStmt = db.prepare(`SELECT value FROM settings WHERE key = ?`);
+const upsertSettingStmt = db.prepare(`
+  INSERT INTO settings (key, value) VALUES (?, ?)
+  ON CONFLICT(key) DO UPDATE SET value = excluded.value
+`);
+
+/** Ambil setting sebagai string, atau default kalau belum pernah di-set. */
+export function getSetting(key: string, defaultValue: string): string {
+  const row = getSettingStmt.get(key) as { value: string } | undefined;
+  return row ? row.value : defaultValue;
+}
+
+export function setSetting(key: string, value: string): void {
+  upsertSettingStmt.run(key, value);
+}
+
+/** Apakah pendaftar boleh pakai email bebas (belum aktivasi student)?
+    Default: true (diizinkan), supaya tidak tiba-tiba mengunci pendaftaran
+    kalau admin belum pernah menyentuh setting ini. */
+export function isFreeEmailAllowed(): boolean {
+  return getSetting("allow_free_email", "true") === "true";
+}
+
+export function setFreeEmailAllowed(allowed: boolean): void {
+  setSetting("allow_free_email", allowed ? "true" : "false");
 }
 
 const insertStmt = db.prepare(`

@@ -228,6 +228,17 @@
             <div class="lbl">CPU</div>
             <div class="stat-bar-bg"><div class="stat-bar-fill" id="barCpu"></div></div>
           </div>
+      <div class="resend-box">
+        <h2 style="margin: 0 0 0.8rem 0; font-size: 1.1rem;">⚙️ Pengaturan Pendaftaran</h2>
+        <label style="display:flex;align-items:center;gap:0.8rem;cursor:pointer;">
+          <input type="checkbox" id="allowFreeEmailToggle" onchange="updateFreeEmailSetting()" style="width:20px;height:20px;" />
+          <span>Izinkan pendaftar pakai email sendiri (belum aktivasi student)</span>
+        </label>
+        <p style="color:#999;font-size:0.8rem;margin-top:0.5rem;">
+          Kalau dimatikan, opsi "Belum, pakai email sendiri" akan hilang dari form pendaftaran,
+          dan pendaftaran dengan email non-student otomatis ditolak server.
+        </p>
+      </div>
           <div class="stat-box">
             <div class="val" id="statMem">-</div>
             <div class="lbl">Memory</div>
@@ -370,6 +381,9 @@
 
           await loadFailedEmails();
           await loadSystemStats();
+          await loadList();
+          await loadFailedEmails();
+          await loadFreeEmailSetting();
 
           const listRes = await fetch(`${API_BASE}/api/admin/list`, {
             headers: { Authorization: `Bearer ${TOKEN}` },
@@ -619,7 +633,39 @@
           alert("Tidak bisa terhubung ke backend.");
         }
       }
+      async function loadFreeEmailSetting() {
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/settings`, {
+            headers: { Authorization: `Bearer ${TOKEN}` },
+          });
+          const json = await res.json();
+          if (json.success) {
+            document.getElementById("allowFreeEmailToggle").checked = json.data.allowFreeEmail;
+          }
+        } catch (e) {
+          console.error("Gagal memuat setting", e);
+        }
+      }
 
+      async function updateFreeEmailSetting() {
+        const checked = document.getElementById("allowFreeEmailToggle").checked;
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/settings`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${TOKEN}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ allowFreeEmail: checked }),
+          });
+          const json = await res.json();
+          if (!json.success) {
+            alert("Gagal update setting: " + json.errors);
+          }
+        } catch (e) {
+          alert("Tidak bisa terhubung ke backend.");
+        }
+      }
       if (TOKEN) load();
     </script>
   </body>

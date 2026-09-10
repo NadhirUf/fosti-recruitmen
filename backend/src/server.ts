@@ -17,6 +17,8 @@ import {
   getFailedEmailRegistrations,
   getRegistrationById,
   deleteRegistrationById,
+  isFreeEmailAllowed,
+  setFreeEmailAllowed,
   DuplicateError,
 } from "./db.js";
 import { isRateLimited } from "./rateLimiter.js";
@@ -165,6 +167,49 @@ function handleStats(_req: IncomingMessage, res: ServerResponse) {
   sendJson(res, 200, {
     success: true,
     data: { totalPendaftar: countRegistrations() },
+  });
+}
+function handlePublicSettings(_req: IncomingMessage, res: ServerResponse) {
+  sendJson(res, 200, {
+    success: true,
+    data: { allowFreeEmail: isFreeEmailAllowed() },
+  });
+}
+
+function handleAdminGetSettings(req: IncomingMessage, res: ServerResponse) {
+  if (!isAdminAuthorized(req)) {
+    return sendJson(res, 401, { success: false, errors: "Unauthorized" });
+  }
+  return sendJson(res, 200, {
+    success: true,
+    data: { allowFreeEmail: isFreeEmailAllowed() },
+  });
+}
+
+async function handleAdminUpdateSettings(
+  req: IncomingMessage,
+  res: ServerResponse,
+) {
+  if (!isAdminAuthorized(req)) {
+    return sendJson(res, 401, { success: false, errors: "Unauthorized" });
+  }
+  let body: unknown;
+  try {
+    body = await readJsonBody(req);
+  } catch {
+    return sendJson(res, 400, { success: false, errors: "JSON tidak valid" });
+  }
+  const b = body as Record<string, unknown>;
+  if (typeof b.allowFreeEmail !== "boolean") {
+    return sendJson(res, 422, {
+      success: false,
+      errors: "allowFreeEmail harus true/false",
+    });
+  }
+  setFreeEmailAllowed(b.allowFreeEmail);
+  return sendJson(res, 200, {
+    success: true,
+    data: { allowFreeEmail: isFreeEmailAllowed() },
   });
 }
 
@@ -371,6 +416,15 @@ const server = createServer(async (req, res) => {
     }
     if (req.method === "GET" && url.pathname === "/api/admin/stats") {
       return handleAdminStats(req, res);
+    }
+    if (req.method === "GET" && url.pathname === "/api/settings") {
+      return handlePublicSettings(req, res);
+    }
+    if (req.method === "GET" && url.pathname === "/api/admin/settings") {
+      return handleAdminGetSettings(req, res);
+    }
+    if (req.method === "POST" && url.pathname === "/api/admin/settings") {
+      return await handleAdminUpdateSettings(req, res);
     }
     if (req.method === "GET" && url.pathname === "/api/admin/list") {
       return handleAdminList(req, res);

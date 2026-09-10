@@ -3,6 +3,7 @@
  */
 
 export interface RegistrationInput {
+  kategori: "mahasiswa" | "umum";
   namaLengkap: string;
   nim: string;
   email: string;

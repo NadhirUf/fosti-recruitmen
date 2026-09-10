@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 import { submitRegistration } from "../lib/api";
 import { FACULTIES } from "../data/prodi";
@@ -20,18 +20,42 @@ const EMPTY_FORM: RegistrationFormData = {
 
 type Status = "idle" | "submitting" | "success" | "error";
 
+const API_BASE = ""; // isi kalau frontend beda origin dengan backend
+
 export default function RegistrationForm() {
   const formRef = useScrollReveal<HTMLDivElement>();
   const [form, setForm] = useState<RegistrationFormData>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<RegistrationFieldErrors>({});
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState<string>("");
+  const [allowFreeEmail, setAllowFreeEmail] = useState<boolean>(true);
 
   const [selectedFaculty, setSelectedFaculty] = useState<string>("");
   const prodiOptions =
     FACULTIES.find((f) => f.name === selectedFaculty)?.prodi ?? [];
 
   const isMahasiswa = form.kategori === "mahasiswa";
+
+  // Cek ke server apakah opsi "email belum aktivasi / pakai email sendiri"
+  // sedang diizinkan admin. Kalau tidak, opsi itu disembunyikan dari form
+  // supaya orang tidak coba daftar pakai email pribadi saat sedang dimatikan.
+  useEffect(() => {
+    fetch(`${API_BASE}/api/settings`)
+      .then((r) => r.json())
+      .then((json) => {
+        if (json?.success) {
+          setAllowFreeEmail(Boolean(json.data.allowFreeEmail));
+          if (!json.data.allowFreeEmail) {
+            setForm((prev) => ({ ...prev, kategori: "mahasiswa" }));
+          }
+        }
+      })
+      .catch(() => {
+        // Kalau gagal fetch settings, biarkan default true supaya form
+        // tetap bisa dipakai (fail-open di sisi UI; validasi asli tetap
+        // dilakukan di server saat submit).
+      });
+  }, []);
 
   function update<K extends keyof RegistrationFormData>(
     key: K,
@@ -91,29 +115,38 @@ export default function RegistrationForm() {
         </h2>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => handleKategoriChange("mahasiswa")}
-              className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
-                isMahasiswa
-                  ? "border-brand-red bg-brand-red/10 text-white"
-                  : "border-white/10 text-white/50"
-              }`}
+          <div>
+            <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-white/50">
+              Email student UMS kamu sudah aktif?
+            </span>
+            <div
+              className={`grid gap-3 ${allowFreeEmail ? "grid-cols-2" : "grid-cols-1"}`}
             >
-              Mahasiswa UMS
-            </button>
-            <button
-              type="button"
-              onClick={() => handleKategoriChange("umum")}
-              className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
-                !isMahasiswa
-                  ? "border-brand-red bg-brand-red/10 text-white"
-                  : "border-white/10 text-white/50"
-              }`}
-            >
-              Umum
-            </button>
+              <button
+                type="button"
+                onClick={() => handleKategoriChange("mahasiswa")}
+                className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
+                  isMahasiswa
+                    ? "border-brand-red bg-brand-red/10 text-white"
+                    : "border-white/10 text-white/50"
+                }`}
+              >
+                Ya, sudah aktif
+              </button>
+              {allowFreeEmail && (
+                <button
+                  type="button"
+                  onClick={() => handleKategoriChange("umum")}
+                  className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
+                    !isMahasiswa
+                      ? "border-brand-red bg-brand-red/10 text-white"
+                      : "border-white/10 text-white/50"
+                  }`}
+                >
+                  Belum, pakai email sendiri
+                </button>
+              )}
+            </div>
           </div>
           {fieldErrors.kategori && (
             <p className="text-xs text-brand-red">{fieldErrors.kategori}</p>
