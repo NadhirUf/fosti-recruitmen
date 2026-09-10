@@ -115,25 +115,23 @@ export default function RegistrationForm() {
         </h2>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
-          <div>
-            <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-white/50">
-              Email student UMS kamu sudah aktif?
-            </span>
-            <div
-              className={`grid gap-3 ${allowFreeEmail ? "grid-cols-2" : "grid-cols-1"}`}
-            >
-              <button
-                type="button"
-                onClick={() => handleKategoriChange("mahasiswa")}
-                className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
-                  isMahasiswa
-                    ? "border-brand-red bg-brand-red/10 text-white"
-                    : "border-white/10 text-white/50"
-                }`}
-              >
-                Ya, sudah aktif
-              </button>
-              {allowFreeEmail && (
+          {allowFreeEmail && (
+            <div>
+              <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-white/50">
+                Email student UMS kamu sudah aktif?
+              </span>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleKategoriChange("mahasiswa")}
+                  className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
+                    isMahasiswa
+                      ? "border-brand-red bg-brand-red/10 text-white"
+                      : "border-white/10 text-white/50"
+                  }`}
+                >
+                  Ya, sudah aktif
+                </button>
                 <button
                   type="button"
                   onClick={() => handleKategoriChange("umum")}
@@ -145,9 +143,9 @@ export default function RegistrationForm() {
                 >
                   Belum, pakai email sendiri
                 </button>
-              )}
+              </div>
             </div>
-          </div>
+          )}
           {fieldErrors.kategori && (
             <p className="text-xs text-brand-red">{fieldErrors.kategori}</p>
           )}
