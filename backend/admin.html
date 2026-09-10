@@ -381,8 +381,6 @@
 
           await loadFailedEmails();
           await loadSystemStats();
-          await loadList();
-          await loadFailedEmails();
           await loadFreeEmailSetting();
 
           const listRes = await fetch(`${API_BASE}/api/admin/list`, {
