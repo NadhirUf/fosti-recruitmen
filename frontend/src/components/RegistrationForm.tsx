@@ -152,7 +152,7 @@ export default function RegistrationForm() {
             <p className="text-xs text-brand-red">{fieldErrors.kategori}</p>
           )}
 
-          <div className={`grid gap-5 ${isMahasiswa ? "sm:grid-cols-2" : ""}`}>
+          <div className="grid gap-5 sm:grid-cols-2">
             <Field
               label="Nama Lengkap"
               placeholder="Charles Leclerc"
@@ -161,23 +161,21 @@ export default function RegistrationForm() {
               error={fieldErrors.namaLengkap}
               autoComplete="name"
             />
-            {isMahasiswa && (
-              <Field
-                label="NIM"
-                placeholder="Contoh: A2000222"
-                value={form.nim}
-                onChange={(v) =>
-                  update(
-                    "nim",
-                    v
-                      .toUpperCase()
-                      .replace(/[^A-Z0-9]/g, "")
-                      .slice(0, 15),
-                  )
-                }
-                error={fieldErrors.nim}
-              />
-            )}
+            <Field
+              label="NIM"
+              placeholder="Contoh: A2000222"
+              value={form.nim}
+              onChange={(v) =>
+                update(
+                  "nim",
+                  v
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9]/g, "")
+                    .slice(0, 15),
+                )
+              }
+              error={fieldErrors.nim}
+            />
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">

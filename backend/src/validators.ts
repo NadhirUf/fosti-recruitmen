@@ -82,10 +82,11 @@ export function validateRegistration(body: unknown): {
     });
   }
 
+  if (!NIM_REGEX.test(nim)) {
+    errors.push({ field: "nim", message: "NIM harus 5-15 karakter, huruf/angka saja" });
+  }
+
   if (isMahasiswa) {
-    if (!NIM_REGEX.test(nim)) {
-      errors.push({ field: "nim", message: "NIM harus 5-15 karakter, huruf/angka saja" });
-    }
     if (!EMAIL_REGEX_UMS.test(email)) {
       errors.push({
         field: "email",
@@ -132,7 +133,7 @@ export function validateRegistration(body: unknown): {
     data: {
       kategori: isMahasiswa ? "mahasiswa" : "umum",
       namaLengkap,
-      nim: isMahasiswa ? nim : "",
+      nim,
       email,
       whatsapp,
       programStudi,
