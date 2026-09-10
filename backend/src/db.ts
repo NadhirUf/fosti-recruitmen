@@ -80,7 +80,7 @@ export function setSetting(key: string, value: string): void {
     Default: true (diizinkan), supaya tidak tiba-tiba mengunci pendaftaran
     kalau admin belum pernah menyentuh setting ini. */
 export function isFreeEmailAllowed(): boolean {
-  return getSetting("allow_free_email", "true") === "true";
+  return getSetting("allow_free_email", "false") === "true";
 }
 
 export function setFreeEmailAllowed(allowed: boolean): void {
