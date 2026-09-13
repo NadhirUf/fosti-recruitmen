@@ -383,15 +383,23 @@
           await loadSystemStats();
           await loadFreeEmailSetting();
 
-          const listRes = await fetch(`${API_BASE}/api/admin/list`, {
-            headers: { Authorization: `Bearer ${TOKEN}` },
-          });
-          const listJson = await listRes.json();
-          const listBody = document.getElementById("listBody");
-          if (listJson.success) {
-            listBody.innerHTML = listJson.data
-              .map(
-                (r) => `
+          await loadList();
+        } catch (e) {
+          err.textContent =
+            "Tidak bisa terhubung ke backend. Cek URL API_BASE di admin.html.";
+        }
+      }
+
+      async function loadList() {
+        const listRes = await fetch(`${API_BASE}/api/admin/list`, {
+          headers: { Authorization: `Bearer ${TOKEN}` },
+        });
+        const listJson = await listRes.json();
+        const listBody = document.getElementById("listBody");
+        if (listJson.success) {
+          listBody.innerHTML = listJson.data
+            .map(
+              (r) => `
   <tr>
     <td>${r.namaLengkap}</td>
     <td>${r.nim}</td>
@@ -399,17 +407,13 @@
     <td>${r.whatsapp}</td>
     <td>${r.programStudi}</td>
     <td>${r.alamatDomisili}</td>
-    <td>${emailStatusBadge(r.emailStatus)}</td>
+    <td>${emailStatusBadge(r.emailStatus)} <button class="resend-btn" onclick="resendEmail(${r.id}, this)">📤 Kirim Ulang</button></td>
     <td>${new Date(r.createdAt).toLocaleString("id-ID")}</td>
     <td><button onclick="hapusPendaftar(${r.id}, '${r.namaLengkap.replace(/'/g, "\\'")}')" style="background:#333;padding:0.4rem 0.8rem;font-size:0.8rem;margin:0">🗑 Hapus</button></td>
   </tr>
 `,
-              )
-              .join("");
-          }
-        } catch (e) {
-          err.textContent =
-            "Tidak bisa terhubung ke backend. Cek URL API_BASE di admin.html.";
+            )
+            .join("");
         }
       }
       async function loadSystemStats() {
@@ -590,6 +594,7 @@
             return;
           }
           await loadFailedEmails();
+          await loadList();
         } catch (e) {
           alert("Tidak bisa terhubung ke backend.");
           btnEl.disabled = false;
