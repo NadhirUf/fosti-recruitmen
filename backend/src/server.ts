@@ -219,10 +219,13 @@ async function handleAdminUpdateSettings(
   });
 }
 
+const OWNER_TOKEN = process.env.OWNER_TOKEN ?? "";
+
 function isAdminAuthorized(req: IncomingMessage): boolean {
-  if (!ADMIN_TOKEN) return false;
   const header = req.headers["authorization"];
-  return header === `Bearer ${ADMIN_TOKEN}`;
+  if (ADMIN_TOKEN && header === `Bearer ${ADMIN_TOKEN}`) return true;
+  if (OWNER_TOKEN && header === `Bearer ${OWNER_TOKEN}`) return true;
+  return false;
 }
 
 function handleAdminStats(req: IncomingMessage, res: ServerResponse) {
