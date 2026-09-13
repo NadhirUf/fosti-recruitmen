@@ -187,25 +187,23 @@ export async function notifyNewRegistration(record: RegistrationRecord): Promise
   }
 }
 
-const SELECTION_CP_NAME = process.env.SELECTION_CP_NAME || CP1_NAME;
-const SELECTION_CP_WHATSAPP = process.env.SELECTION_CP_WHATSAPP || CP1_WHATSAPP;
-
-function buildSelectionWaLink(record: RegistrationRecord): string {
+function buildSelectionWaLink(cpName: string, cpNumber: string, record: RegistrationRecord): string {
   const message =
-    `Assalamualaikum kak, perkenalkan saya ${record.namaLengkap} ` +
-    `dengan NIM ${record.nim}. Saya dinyatakan lolos seleksi Oprec FOSTI 2026 ` +
-    `dan ingin bergabung ke grup calon angkatan 2026. Mohon info selanjutnya, terima kasih!`;
-  return `https://wa.me/${SELECTION_CP_WHATSAPP}?text=${encodeURIComponent(message)}`;
+    `Assalamualaikum kak ${cpName}, perkenalkan saya ${record.namaLengkap} ` +
+    `dengan NIM ${record.nim}. Alhamdulillah saya dinyatakan lolos seleksi Oprec FOSTI 2026. ` +
+    `Boleh minta link grup WA calon anggota FOSTI angkatan 2026 kak? Terima kasih banyak sebelumnya!`;
+  return `https://wa.me/${cpNumber}?text=${encodeURIComponent(message)}`;
 }
 
 function emailHtmlPassed(record: RegistrationRecord): string {
-  const button = SELECTION_CP_WHATSAPP
-    ? waButton(
-        `Hubungi CP via WhatsApp${SELECTION_CP_NAME ? ` (${SELECTION_CP_NAME})` : ""}`,
-        buildSelectionWaLink(record),
-        "#14b8a6",
-      )
-    : "";
+  const cpButtons = [
+    CP1_NAME && CP1_WHATSAPP
+      ? waButton(`Hubungi CP 1 (${CP1_NAME})`, buildSelectionWaLink(CP1_NAME, CP1_WHATSAPP, record), "#14b8a6")
+      : "",
+    CP2_NAME && CP2_WHATSAPP
+      ? waButton(`Hubungi CP 2 (${CP2_NAME})`, buildSelectionWaLink(CP2_NAME, CP2_WHATSAPP, record), "#e10664")
+      : "",
+  ].join("\n");
   return `
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;">
       <h2 style="color:#e10600;">Selamat!!! 🎉 Kamu Lolos Seleksi FOSTI!</h2>
@@ -214,8 +212,8 @@ function emailHtmlPassed(record: RegistrationRecord): string {
         dan menjadi bagian dari keluarga besar FOSTI angkatan 2026! 🥳</p>
       <p>Perjalanan seru bareng FOSTI baru akan dimulai. Supaya nggak ketinggalan info
         penting dan bisa segera gabung ke grup WA calon angkatan 2026, langsung hubungi
-        nomor di bawah ini ya:</p>
-      ${button}
+        salah satu CP di bawah ini ya:</p>
+      ${cpButtons}
       <p style="margin-top:16px;">Jangan ditunda-tunda, karena kita udah nggak sabar
         buat kenalan lebih jauh sama kamu!</p>
       <p>Selamat bergabung, dan sampai jumpa di grup! 🎊</p>
