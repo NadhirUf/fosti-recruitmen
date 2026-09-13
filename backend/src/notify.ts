@@ -186,3 +186,100 @@ export async function notifyNewRegistration(record: RegistrationRecord): Promise
     console.error(`[notify] gagal kirim WhatsApp ke ${record.whatsapp}:`, err);
   }
 }
+
+const SELECTION_CP_NAME = process.env.SELECTION_CP_NAME || CP1_NAME;
+const SELECTION_CP_WHATSAPP = process.env.SELECTION_CP_WHATSAPP || CP1_WHATSAPP;
+
+function buildSelectionWaLink(record: RegistrationRecord): string {
+  const message =
+    `Assalamualaikum kak, perkenalkan saya ${record.namaLengkap} ` +
+    `dengan NIM ${record.nim}. Saya dinyatakan lolos seleksi Oprec FOSTI 2026 ` +
+    `dan ingin bergabung ke grup calon angkatan 2026. Mohon info selanjutnya, terima kasih!`;
+  return `https://wa.me/${SELECTION_CP_WHATSAPP}?text=${encodeURIComponent(message)}`;
+}
+
+function emailHtmlPassed(record: RegistrationRecord): string {
+  const button = SELECTION_CP_WHATSAPP
+    ? waButton(
+        `Hubungi CP via WhatsApp${SELECTION_CP_NAME ? ` (${SELECTION_CP_NAME})` : ""}`,
+        buildSelectionWaLink(record),
+        "#14b8a6",
+      )
+    : "";
+  return `
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;">
+      <h2 style="color:#e10600;">Selamat!!! 🎉 Kamu Lolos Seleksi FOSTI!</h2>
+      <p>Halo ${record.namaLengkap},</p>
+      <p>Selamat banget! Setelah melalui proses seleksi, kamu <strong>resmi lolos</strong>
+        dan menjadi bagian dari keluarga besar FOSTI angkatan 2026! 🥳</p>
+      <p>Perjalanan seru bareng FOSTI baru akan dimulai. Supaya nggak ketinggalan info
+        penting dan bisa segera gabung ke grup WA calon angkatan 2026, langsung hubungi
+        nomor di bawah ini ya:</p>
+      ${button}
+      <p style="margin-top:16px;">Jangan ditunda-tunda, karena kita udah nggak sabar
+        buat kenalan lebih jauh sama kamu!</p>
+      <p>Selamat bergabung, dan sampai jumpa di grup! 🎊</p>
+      <p style="margin-top:20px;">XOXO,<br/>Tim FOSTI</p>
+    </div>
+  `;
+}
+
+function emailHtmlFailed(record: RegistrationRecord): string {
+  return `
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;">
+      <p>Halo ${record.namaLengkap},</p>
+      <p>Terima kasih banyak sudah mendaftar di <strong>FOSTI</strong>. Setelah melalui
+        proses seleksi, dengan berat hati kami sampaikan bahwa kamu belum berhasil lolos
+        pada periode ini.</p>
+      <p>Jangan berkecil hati — ini bukan akhir, dan kami sangat menghargai antusiasme
+        kamu untuk bergabung. Tetap pantau sosial media FOSTI ya, siapa tahu ada
+        kesempatan lain ke depannya!</p>
+      <p>Terima kasih dan semoga sukses selalu.</p>
+      <p style="margin-top:20px;">XOXO,<br/>Tim FOSTI</p>
+    </div>
+  `;
+}
+
+async function deliverEmail(to: string, subject: string, html: string): Promise<void> {
+  if (gmailTransporter) {
+    await gmailTransporter.sendMail({
+      from: `"${GMAIL_SENDER_NAME}" <${GMAIL_USER}>`,
+      to,
+      subject,
+      html,
+    });
+    return;
+  }
+  if (!RESEND_API_KEY) {
+    console.warn("[notify] GMAIL_* atau RESEND_API_KEY belum di-set, lewati kirim email");
+    return;
+  }
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ from: RESEND_FROM, to, subject, html }),
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Resend gagal (${res.status}): ${body}`);
+  }
+}
+
+export async function sendSelectionPassedEmail(record: RegistrationRecord): Promise<void> {
+  await deliverEmail(
+    record.email,
+    "Selamat!!! 🎉 Kamu Lolos Seleksi FOSTI 2026",
+    emailHtmlPassed(record),
+  );
+}
+
+export async function sendSelectionFailedEmail(record: RegistrationRecord): Promise<void> {
+  await deliverEmail(
+    record.email,
+    "Pengumuman Hasil Seleksi FOSTI 2026",
+    emailHtmlFailed(record),
+  );
+}

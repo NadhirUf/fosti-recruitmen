@@ -19,10 +19,16 @@ import {
   deleteRegistrationById,
   isFreeEmailAllowed,
   setFreeEmailAllowed,
+  recordSelectionResult,
   DuplicateError,
 } from "./db.js";
 import { isRateLimited } from "./rateLimiter.js";
-import { notifyNewRegistration, resendEmailToRegistration } from "./notify.js";
+import {
+  notifyNewRegistration,
+  resendEmailToRegistration,
+  sendSelectionPassedEmail,
+  sendSelectionFailedEmail,
+} from "./notify.js";
 import type { ApiResponse, RegistrationRecord } from "./types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -278,6 +284,41 @@ async function handleAdminResend(
   }
 }
 
+async function handleAdminMarkSelection(
+  req: IncomingMessage,
+  res: ServerResponse,
+  idParam: string,
+  status: "passed" | "failed",
+) {
+  if (!isAdminAuthorized(req)) {
+    return sendJson(res, 401, { success: false, errors: "Unauthorized" });
+  }
+  const id = Number(idParam);
+  if (!Number.isInteger(id) || id <= 0) {
+    return sendJson(res, 400, { success: false, errors: "ID tidak valid" });
+  }
+  const record = getRegistrationById(id);
+  if (!record) {
+    return sendJson(res, 404, { success: false, errors: "Pendaftar tidak ditemukan" });
+  }
+  try {
+    if (status === "passed") {
+      await sendSelectionPassedEmail(record);
+    } else {
+      await sendSelectionFailedEmail(record);
+    }
+    recordSelectionResult(id, status, "sent", null);
+    return sendJson(res, 200, { success: true, data: { id, status } });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    recordSelectionResult(id, status, "failed", message);
+    return sendJson(res, 502, {
+      success: false,
+      errors: `Status disimpan tapi email gagal terkirim: ${message}`,
+    });
+  }
+}
+
 function handleAdminDelete(
   req: IncomingMessage,
   res: ServerResponse,
@@ -438,6 +479,20 @@ const server = createServer(async (req, res) => {
     ) {
       const id = url.pathname.split("/").pop() ?? "";
       return await handleAdminResend(req, res, id);
+    }
+    if (
+      req.method === "POST" &&
+      url.pathname.startsWith("/api/admin/mark-passed/")
+    ) {
+      const id = url.pathname.split("/").pop() ?? "";
+      return await handleAdminMarkSelection(req, res, id, "passed");
+    }
+    if (
+      req.method === "POST" &&
+      url.pathname.startsWith("/api/admin/mark-failed/")
+    ) {
+      const id = url.pathname.split("/").pop() ?? "";
+      return await handleAdminMarkSelection(req, res, id, "failed");
     }
     if (
       req.method === "DELETE" &&

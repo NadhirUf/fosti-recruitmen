@@ -19,6 +19,10 @@ export interface RegistrationRecord extends RegistrationInput {
   emailStatus?: "pending" | "sent" | "failed";
   emailError?: string | null;
   emailSentAt?: string | null;
+  selectionStatus?: "passed" | "failed" | null;
+  selectionEmailStatus?: "sent" | "failed" | null;
+  selectionEmailError?: string | null;
+  selectionSentAt?: string | null;
 }
 
 export interface ValidationError {

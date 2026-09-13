@@ -51,6 +51,18 @@ if (!existingColumns.includes("email_error")) {
 if (!existingColumns.includes("email_sent_at")) {
   db.exec(`ALTER TABLE registrations ADD COLUMN email_sent_at TEXT`);
 }
+if (!existingColumns.includes("selection_status")) {
+  db.exec(`ALTER TABLE registrations ADD COLUMN selection_status TEXT`);
+}
+if (!existingColumns.includes("selection_email_status")) {
+  db.exec(`ALTER TABLE registrations ADD COLUMN selection_email_status TEXT`);
+}
+if (!existingColumns.includes("selection_email_error")) {
+  db.exec(`ALTER TABLE registrations ADD COLUMN selection_email_error TEXT`);
+}
+if (!existingColumns.includes("selection_sent_at")) {
+  db.exec(`ALTER TABLE registrations ADD COLUMN selection_sent_at TEXT`);
+}
 
 // --- Tabel settings: key-value sederhana untuk toggle dari admin panel ---
 db.exec(`
@@ -106,7 +118,11 @@ const allRegistrationsStmt = db.prepare(`
   SELECT id, nama_lengkap AS namaLengkap, nim, email, whatsapp,
          program_studi AS programStudi, alamat_domisili AS alamatDomisili,
          created_at AS createdAt, email_status AS emailStatus,
-         email_error AS emailError, email_sent_at AS emailSentAt
+         email_error AS emailError, email_sent_at AS emailSentAt,
+         selection_status AS selectionStatus,
+         selection_email_status AS selectionEmailStatus,
+         selection_email_error AS selectionEmailError,
+         selection_sent_at AS selectionSentAt
   FROM registrations
   ORDER BY created_at ASC
 `);
@@ -125,7 +141,11 @@ const getByIdStmt = db.prepare(`
   SELECT id, nama_lengkap AS namaLengkap, nim, email, whatsapp,
          program_studi AS programStudi, alamat_domisili AS alamatDomisili,
          created_at AS createdAt, email_status AS emailStatus,
-         email_error AS emailError, email_sent_at AS emailSentAt
+         email_error AS emailError, email_sent_at AS emailSentAt,
+         selection_status AS selectionStatus,
+         selection_email_status AS selectionEmailStatus,
+         selection_email_error AS selectionEmailError,
+         selection_sent_at AS selectionSentAt
   FROM registrations
   WHERE id = ?
 `);
@@ -135,6 +155,21 @@ const updateEmailStatusStmt = db.prepare(`
   SET email_status = ?, email_error = ?, email_sent_at = ?
   WHERE id = ?
 `);
+
+const updateSelectionStmt = db.prepare(`
+  UPDATE registrations
+  SET selection_status = ?, selection_email_status = ?, selection_email_error = ?, selection_sent_at = ?
+  WHERE id = ?
+`);
+
+export function recordSelectionResult(
+  id: number,
+  status: "passed" | "failed",
+  emailStatus: "sent" | "failed",
+  emailError: string | null,
+): void {
+  updateSelectionStmt.run(status, emailStatus, emailError, new Date().toISOString(), id);
+}
 
 const findByNimStmt = db.prepare(`SELECT id FROM registrations WHERE nim = ?`);
 const findByEmailStmt = db.prepare(

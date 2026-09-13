@@ -318,6 +318,7 @@
               <th>Alamat Domisili</th>
               <th>Email</th>
               <th>Daftar Pada</th>
+              <th>Seleksi</th>
               <th>Aksi</th>
             </tr>
           </thead>
@@ -336,6 +337,40 @@
         if (status === "pending")
           return '<span class="badge badge-pending">Pending</span>';
         return "✅ Terkirim";
+      }
+
+      function selectionBadge(status) {
+        if (status === "passed")
+          return '<div style="color:#4ade80;font-size:0.8rem;font-weight:700;margin-bottom:2px">✅ Lolos</div>';
+        if (status === "failed")
+          return '<div style="color:#ff6b6b;font-size:0.8rem;font-weight:700;margin-bottom:2px">❌ Tidak Lolos</div>';
+        return '<div style="color:#999;font-size:0.8rem;margin-bottom:2px">Belum diputuskan</div>';
+      }
+
+      async function markSelection(id, status, btnEl) {
+        const label = status === "passed" ? "LOLOS" : "TIDAK LOLOS";
+        if (!confirm(`Kirim email hasil seleksi "${label}" ke pendaftar ini?`)) return;
+        const row = btnEl.closest("tr");
+        const buttons = row.querySelectorAll("button");
+        buttons.forEach((b) => (b.disabled = true));
+        const originalText = btnEl.textContent;
+        btnEl.textContent = "Mengirim...";
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/mark-${status}/${id}`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${TOKEN}` },
+          });
+          const json = await res.json();
+          if (!json.success) {
+            alert("Gagal: " + (json.errors ?? "Unknown error"));
+          }
+          await loadList();
+        } catch (e) {
+          alert("Tidak bisa terhubung ke backend.");
+        } finally {
+          buttons.forEach((b) => (b.disabled = false));
+          btnEl.textContent = originalText;
+        }
       }
 
       async function load() {
@@ -409,6 +444,10 @@
     <td>${r.alamatDomisili}</td>
     <td>${emailStatusBadge(r.emailStatus)} <button class="resend-btn" onclick="resendEmail(${r.id}, this)">📤 Kirim Ulang</button></td>
     <td>${new Date(r.createdAt).toLocaleString("id-ID")}</td>
+    <td>${selectionBadge(r.selectionStatus)}
+      <button onclick="markSelection(${r.id}, 'passed', this)" style="background:#14b8a6;padding:0.4rem 0.7rem;font-size:0.75rem;margin:2px 0">✅ Lolos</button>
+      <button onclick="markSelection(${r.id}, 'failed', this)" style="background:#666;padding:0.4rem 0.7rem;font-size:0.75rem;margin:2px 0">❌ Tidak Lolos</button>
+    </td>
     <td><button onclick="hapusPendaftar(${r.id}, '${r.namaLengkap.replace(/'/g, "\\'")}')" style="background:#333;padding:0.4rem 0.8rem;font-size:0.8rem;margin:0">🗑 Hapus</button></td>
   </tr>
 `,
