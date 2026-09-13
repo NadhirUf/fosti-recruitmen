@@ -191,7 +191,7 @@ function buildSelectionWaLink(cpName: string, cpNumber: string, record: Registra
   const message =
     `Assalamualaikum kak ${cpName}, perkenalkan saya ${record.namaLengkap} ` +
     `dengan NIM ${record.nim}. Alhamdulillah saya dinyatakan lolos seleksi Oprec FOSTI 2026. ` +
-    `Boleh minta link grup WA calon anggota FOSTI angkatan 2026 kak? Terima kasih banyak sebelumnya!`;
+    `Mohon arahan untuk langkah selanjutnya ya kak. Terima kasih banyak sebelumnya!`;
   return `https://wa.me/${cpNumber}?text=${encodeURIComponent(message)}`;
 }
 
