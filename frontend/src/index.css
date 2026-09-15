@@ -54,6 +54,47 @@ body {
   }
 }
 
+/* ---------- Layar penutup pendaftaran ---------- */
+/* Elemen di layar penutup muncul sendiri (fade + naik) tanpa perlu scroll,
+   delay-nya diatur per elemen lewat inline style animationDelay. */
+@keyframes closed-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.closed-item {
+  opacity: 0;
+  animation: closed-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Saat layar penutup tampil sebagai overlay, halaman di belakangnya
+   dibekukan supaya benar-benar tidak bisa di-scroll / disentuh. */
+body.recruitment-closed {
+  overflow: hidden;
+}
+
+.closed-backdrop {
+  filter: blur(10px) saturate(0.6) brightness(0.45);
+  pointer-events: none;
+  user-select: none;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .closed-item {
+    animation: none;
+    opacity: 1;
+  }
+}
+
 /* ---------- Animasi saat nav link diklik ---------- */
 @keyframes nav-pulse {
   0% {

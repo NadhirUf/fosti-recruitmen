@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent } from "react";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 import { submitRegistration } from "../lib/api";
 import { FACULTIES } from "../data/prodi";
+import { RECRUITMENT_CLOSED } from "../config";
 import type {
   KategoriPendaftar,
   RegistrationFieldErrors,
@@ -76,6 +77,15 @@ export default function RegistrationForm() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+
+    // Pengaman tambahan: kalau pendaftaran sudah ditutup, jangan pernah
+    // kirim apa-apa ke server walau form-nya entah bagaimana masih terbuka.
+    if (RECRUITMENT_CLOSED) {
+      setStatus("error");
+      setMessage("Pendaftaran sudah ditutup.");
+      return;
+    }
+
     setStatus("submitting");
     setFieldErrors({});
     setMessage("");
