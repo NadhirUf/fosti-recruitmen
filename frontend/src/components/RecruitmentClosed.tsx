@@ -25,27 +25,17 @@ import ClosedParticles from "./ClosedParticles";
 export default function RecruitmentClosed() {
   return (
     <main className="relative flex min-h-[100svh] w-full select-none flex-col items-center justify-center overflow-hidden px-5 py-14 text-center sm:px-8 sm:py-16">
-      {/* Aurora blur berputar pelan, lapisan paling belakang */}
-      <div
-        aria-hidden
-        className="closed-aurora pointer-events-none absolute left-1/2 top-1/2 h-[140vmax] w-[140vmax] -translate-x-1/2 -translate-y-1/2"
-      />
+      {/* Lampu merah besar yang berputar mengelilingi layar */}
+      <div aria-hidden className="closed-orbit">
+        <div className="closed-orbit-inner">
+          <span className="closed-orbit-blob closed-orbit-blob-1" />
+          <span className="closed-orbit-blob closed-orbit-blob-2" />
+          <span className="closed-orbit-blob closed-orbit-blob-3" />
+        </div>
+      </div>
 
       {/* Tekstur grid titik-titik halus, bikin latar tidak polos */}
-      <div
-        aria-hidden
-        className="closed-grid pointer-events-none absolute inset-0"
-      />
-
-      {/* Ambient glow merah, melayang pelan-pelan */}
-      <div
-        aria-hidden
-        className="closed-glow-a pointer-events-none absolute -top-40 left-1/2 h-[460px] w-[460px] rounded-full bg-brand-red/10 blur-[110px] sm:h-[620px] sm:w-[620px]"
-      />
-      <div
-        aria-hidden
-        className="closed-glow-b pointer-events-none absolute -bottom-48 left-1/2 h-[380px] w-[380px] rounded-full bg-brand-red/[0.07] blur-[110px] sm:h-[520px] sm:w-[520px]"
-      />
+      <div aria-hidden className="closed-grid" />
 
       {/* Confetti / partikel melayang naik */}
       <ClosedParticles />

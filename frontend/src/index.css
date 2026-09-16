@@ -56,37 +56,87 @@ body {
 
 /* ---------- Layar penutup pendaftaran: background aesthetic ---------- */
 
-/* Aurora blur besar yang berputar pelan di belakang segalanya.
-   Pakai conic-gradient + blur berat + mix-blend-mode supaya nyatu dengan
-   base-bg gelap, bukan seperti stiker warna-warni yang ditempel. */
-.closed-aurora {
-  background: conic-gradient(
-    from 0deg,
-    rgba(225, 6, 0, 0.16),
-    rgba(255, 209, 102, 0.08) 25%,
-    transparent 45%,
-    rgba(225, 6, 0, 0.12) 65%,
-    transparent 85%,
-    rgba(225, 6, 0, 0.16)
-  );
-  filter: blur(120px);
-  mix-blend-mode: screen;
-  opacity: 0.7;
-  animation: closed-aurora-spin 40s linear infinite;
+/* "Lampu" merah besar yang berputar mengelilingi layar, seperti cahaya yang
+   menyapu sisi-sisi website terus-menerus. Triknya: satu wrapper raksasa
+   (.closed-orbit-inner) yang diputar penuh 360°, isinya beberapa bola
+   cahaya (blob) yang sengaja diletakkan MENJAUH dari titik tengah — jadi
+   waktu wrapper-nya berputar, tiap blob benar-benar menyapu dari atas ke
+   kanan ke bawah ke kiri layar, bukan cuma gradient diam yang warnanya
+   doang berubah pelan (itu masalah versi sebelumnya: nyaris tak terlihat). */
+.closed-orbit {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
-@keyframes closed-aurora-spin {
+.closed-orbit-inner {
+  position: absolute;
+  inset: 0;
+  animation: closed-orbit-spin 22s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+.closed-orbit-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  transform: translate(-50%, -50%);
+}
+
+.closed-orbit-blob-1 {
+  top: 8%;
+  left: 50%;
+  width: 55vmin;
+  height: 55vmin;
+  background: radial-gradient(
+    circle,
+    rgba(225, 6, 0, 0.6) 0%,
+    rgba(225, 6, 0, 0) 70%
+  );
+}
+
+.closed-orbit-blob-2 {
+  top: 50%;
+  left: 94%;
+  width: 48vmin;
+  height: 48vmin;
+  background: radial-gradient(
+    circle,
+    rgba(255, 209, 102, 0.45) 0%,
+    rgba(255, 209, 102, 0) 70%
+  );
+}
+
+.closed-orbit-blob-3 {
+  top: 90%;
+  left: 16%;
+  width: 50vmin;
+  height: 50vmin;
+  background: radial-gradient(
+    circle,
+    rgba(166, 4, 0, 0.55) 0%,
+    rgba(166, 4, 0, 0) 70%
+  );
+}
+
+@keyframes closed-orbit-spin {
   from {
-    transform: translate(-50%, -50%) rotate(0deg);
+    transform: rotate(0deg);
   }
   to {
-    transform: translate(-50%, -50%) rotate(360deg);
+    transform: rotate(360deg);
   }
 }
 
 /* Tekstur titik-titik halus, memberi sedikit "grain" supaya latar gelap
    tidak terasa kosong/flat. Sangat samar (opacity rendah). */
 .closed-grid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
   background-image: radial-gradient(
     rgba(255, 255, 255, 0.5) 1px,
     transparent 1px
@@ -102,37 +152,6 @@ body {
   }
   to {
     background-position: 260px 130px;
-  }
-}
-
-/* Dua glow merah lama, sekarang melayang pelan-pelan bukan diam total */
-.closed-glow-a {
-  transform: translateX(-50%);
-  animation: closed-float-a 14s ease-in-out infinite;
-}
-
-.closed-glow-b {
-  transform: translateX(-50%);
-  animation: closed-float-b 16s ease-in-out infinite;
-}
-
-@keyframes closed-float-a {
-  0%,
-  100% {
-    transform: translate(-50%, 0) scale(1);
-  }
-  50% {
-    transform: translate(-42%, 24px) scale(1.08);
-  }
-}
-
-@keyframes closed-float-b {
-  0%,
-  100% {
-    transform: translate(-50%, 0) scale(1);
-  }
-  50% {
-    transform: translate(-58%, -20px) scale(1.05);
   }
 }
 
@@ -207,10 +226,8 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .closed-aurora,
+  .closed-orbit-inner,
   .closed-grid,
-  .closed-glow-a,
-  .closed-glow-b,
   .closed-photo-zoom,
   .closed-badge,
   .closed-particle-dot,
