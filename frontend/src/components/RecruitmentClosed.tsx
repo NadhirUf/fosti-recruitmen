@@ -34,6 +34,9 @@ export default function RecruitmentClosed() {
         </div>
       </div>
 
+      {/* Cahaya ambient tetap, supaya layar tetap terasa "menyala" hangat */}
+      <div aria-hidden className="closed-ambient" />
+
       {/* Tekstur grid titik-titik halus, bikin latar tidak polos */}
       <div aria-hidden className="closed-grid" />
 

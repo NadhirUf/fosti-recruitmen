@@ -74,14 +74,14 @@ body {
 .closed-orbit-inner {
   position: absolute;
   inset: 0;
-  animation: closed-orbit-spin 22s linear infinite;
+  animation: closed-orbit-spin 18s linear infinite;
   transform-origin: 50% 50%;
 }
 
 .closed-orbit-blob {
   position: absolute;
   border-radius: 9999px;
-  filter: blur(90px);
+  filter: blur(85px);
   transform: translate(-50%, -50%);
 }
 
@@ -92,8 +92,8 @@ body {
   height: 55vmin;
   background: radial-gradient(
     circle,
-    rgba(225, 6, 0, 0.6) 0%,
-    rgba(225, 6, 0, 0) 70%
+    rgba(225, 6, 0, 0.75) 0%,
+    rgba(225, 6, 0, 0) 72%
   );
 }
 
@@ -104,8 +104,8 @@ body {
   height: 48vmin;
   background: radial-gradient(
     circle,
-    rgba(255, 209, 102, 0.45) 0%,
-    rgba(255, 209, 102, 0) 70%
+    rgba(255, 209, 102, 0.6) 0%,
+    rgba(255, 209, 102, 0) 72%
   );
 }
 
@@ -116,8 +116,23 @@ body {
   height: 50vmin;
   background: radial-gradient(
     circle,
-    rgba(166, 4, 0, 0.55) 0%,
-    rgba(166, 4, 0, 0) 70%
+    rgba(166, 4, 0, 0.7) 0%,
+    rgba(166, 4, 0, 0) 72%
+  );
+}
+
+/* Cahaya ambient tetap (tidak ikut berputar), supaya layar tetap terasa
+   "menyala" hangat walau di suatu momen ketiga blob kebetulan lagi jauh
+   dari tengah — dan tetap ada meski animasi dimatikan (prefers-reduced-motion). */
+.closed-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 90% 60% at 50% 15%,
+    rgba(225, 6, 0, 0.1),
+    transparent 70%
   );
 }
 
@@ -226,13 +241,24 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .closed-orbit-inner,
+  /* Lampu latar tetap boleh berputar — cuma jauh lebih pelan — karena ini
+     cuma cahaya ambient besar yang blur, bukan gerakan tajam/parallax yang
+     biasanya bikin tidak nyaman untuk orang dengan preferensi ini. Yang
+     dimatikan total: confetti naik terus-terusan, foto yang zoom, dan
+     badge yang berdenyut — itu jenis gerakan berulang yang lebih mengganggu. */
+  .closed-orbit-inner {
+    animation-duration: 90s;
+  }
+
   .closed-grid,
   .closed-photo-zoom,
-  .closed-badge,
   .closed-particle-dot,
   .closed-particle-strip {
     animation: none !important;
+  }
+
+  .closed-badge {
+    animation: closed-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 }
 
