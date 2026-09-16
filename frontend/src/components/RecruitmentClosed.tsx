@@ -1,6 +1,7 @@
 import fostiLogo from "../assets/fosti-swirl-only.png";
 import teamPhoto from "../assets/closed/team-2026.png";
 import thankYou from "../assets/closed/thank-you.svg";
+import ClosedParticles from "./ClosedParticles";
 
 /**
  * Layar penutup open recruitment.
@@ -13,19 +14,41 @@ import thankYou from "../assets/closed/thank-you.svg";
  * - mobile  : foto di atas, tulisan "Thank you..." full-width di bawah foto
  *             (kalau ditumpuk di atas foto, hurufnya jadi terlalu kecil)
  * - sm ke atas: tulisan ditumpuk di tengah foto, persis desain Figma
+ *
+ * Animasi:
+ * - background "aurora" blur yang berputar & dua glow merah yang melayang
+ *   pelan, bikin latar tidak terasa statis
+ * - partikel/confetti kecil yang naik terus-menerus (lihat ClosedParticles)
+ * - foto angkatan zoom-in perlahan (Ken Burns) supaya terasa hidup
+ * - tiap elemen teks/logo muncul bertahap (fade + naik) saat halaman dibuka
  */
 export default function RecruitmentClosed() {
   return (
     <main className="relative flex min-h-[100svh] w-full select-none flex-col items-center justify-center overflow-hidden px-5 py-14 text-center sm:px-8 sm:py-16">
-      {/* Ambient glow merah, menyambung dengan gaya hero lama */}
+      {/* Aurora blur berputar pelan, lapisan paling belakang */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-40 left-1/2 h-[460px] w-[460px] -translate-x-1/2 rounded-full bg-brand-red/10 blur-[110px] sm:h-[620px] sm:w-[620px]"
+        className="closed-aurora pointer-events-none absolute left-1/2 top-1/2 h-[140vmax] w-[140vmax] -translate-x-1/2 -translate-y-1/2"
+      />
+
+      {/* Tekstur grid titik-titik halus, bikin latar tidak polos */}
+      <div
+        aria-hidden
+        className="closed-grid pointer-events-none absolute inset-0"
+      />
+
+      {/* Ambient glow merah, melayang pelan-pelan */}
+      <div
+        aria-hidden
+        className="closed-glow-a pointer-events-none absolute -top-40 left-1/2 h-[460px] w-[460px] rounded-full bg-brand-red/10 blur-[110px] sm:h-[620px] sm:w-[620px]"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-48 left-1/2 h-[380px] w-[380px] -translate-x-1/2 rounded-full bg-brand-red/[0.07] blur-[110px] sm:h-[520px] sm:w-[520px]"
+        className="closed-glow-b pointer-events-none absolute -bottom-48 left-1/2 h-[380px] w-[380px] rounded-full bg-brand-red/[0.07] blur-[110px] sm:h-[520px] sm:w-[520px]"
       />
+
+      {/* Confetti / partikel melayang naik */}
+      <ClosedParticles />
 
       <div className="closed-stage relative z-10 flex w-full max-w-4xl flex-col items-center">
         {/* --- Logo --- */}
@@ -38,7 +61,7 @@ export default function RecruitmentClosed() {
 
         {/* --- Badge status --- */}
         <p
-          className="closed-item mt-5 rounded-full border border-brand-red/60 px-4 py-1.5 text-[11px] font-medium tracking-wide text-brand-red sm:text-xs"
+          className="closed-item closed-badge mt-5 rounded-full border border-brand-red/60 px-4 py-1.5 text-[11px] font-medium tracking-wide text-brand-red sm:text-xs"
           style={{ animationDelay: "120ms" }}
         >
           Open Recruitment 2026 telah ditutup
@@ -52,7 +75,7 @@ export default function RecruitmentClosed() {
 
         {/* --- Foto angkatan --- */}
         <figure
-          className="closed-item relative mt-8 w-full sm:mt-10"
+          className="closed-item relative mt-8 w-full overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/60 sm:mt-10 sm:rounded-[18px]"
           style={{ animationDelay: "240ms" }}
         >
           <img
@@ -61,13 +84,13 @@ export default function RecruitmentClosed() {
             width={807}
             height={453}
             draggable={false}
-            className="h-auto w-full rounded-2xl border border-white/10 shadow-2xl shadow-black/60 sm:rounded-[18px]"
+            className="closed-photo-zoom block h-auto w-full"
           />
 
           {/* Scrim gelap supaya tulisan putih tetap terbaca di atas foto */}
           <div
             aria-hidden
-            className="absolute inset-0 hidden rounded-2xl bg-gradient-to-b from-black/25 via-black/55 to-black/25 sm:block sm:rounded-[18px]"
+            className="absolute inset-0 hidden bg-gradient-to-b from-black/25 via-black/55 to-black/25 sm:block"
           />
 
           {/* Tulisan di atas foto (desktop / tablet) */}

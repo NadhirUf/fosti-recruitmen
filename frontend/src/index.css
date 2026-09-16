@@ -54,6 +54,171 @@ body {
   }
 }
 
+/* ---------- Layar penutup pendaftaran: background aesthetic ---------- */
+
+/* Aurora blur besar yang berputar pelan di belakang segalanya.
+   Pakai conic-gradient + blur berat + mix-blend-mode supaya nyatu dengan
+   base-bg gelap, bukan seperti stiker warna-warni yang ditempel. */
+.closed-aurora {
+  background: conic-gradient(
+    from 0deg,
+    rgba(225, 6, 0, 0.16),
+    rgba(255, 209, 102, 0.08) 25%,
+    transparent 45%,
+    rgba(225, 6, 0, 0.12) 65%,
+    transparent 85%,
+    rgba(225, 6, 0, 0.16)
+  );
+  filter: blur(120px);
+  mix-blend-mode: screen;
+  opacity: 0.7;
+  animation: closed-aurora-spin 40s linear infinite;
+}
+
+@keyframes closed-aurora-spin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Tekstur titik-titik halus, memberi sedikit "grain" supaya latar gelap
+   tidak terasa kosong/flat. Sangat samar (opacity rendah). */
+.closed-grid {
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.5) 1px,
+    transparent 1px
+  );
+  background-size: 26px 26px;
+  opacity: 0.05;
+  animation: closed-grid-pan 60s linear infinite;
+}
+
+@keyframes closed-grid-pan {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 260px 130px;
+  }
+}
+
+/* Dua glow merah lama, sekarang melayang pelan-pelan bukan diam total */
+.closed-glow-a {
+  transform: translateX(-50%);
+  animation: closed-float-a 14s ease-in-out infinite;
+}
+
+.closed-glow-b {
+  transform: translateX(-50%);
+  animation: closed-float-b 16s ease-in-out infinite;
+}
+
+@keyframes closed-float-a {
+  0%,
+  100% {
+    transform: translate(-50%, 0) scale(1);
+  }
+  50% {
+    transform: translate(-42%, 24px) scale(1.08);
+  }
+}
+
+@keyframes closed-float-b {
+  0%,
+  100% {
+    transform: translate(-50%, 0) scale(1);
+  }
+  50% {
+    transform: translate(-58%, -20px) scale(1.05);
+  }
+}
+
+/* Foto angkatan: zoom in-out pelan (efek Ken Burns) supaya tidak statis */
+.closed-photo-zoom {
+  animation: closed-photo-zoom 16s ease-in-out infinite alternate;
+  transform-origin: center 35%;
+}
+
+@keyframes closed-photo-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.07);
+  }
+}
+
+/* Badge status berdenyut pelan supaya mata tertuju ke situ duluan */
+.closed-badge {
+  animation:
+    closed-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+    closed-badge-pulse 2.6s ease-in-out 1s infinite;
+}
+
+@keyframes closed-badge-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(225, 6, 0, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(225, 6, 0, 0);
+  }
+}
+
+/* ---------- Partikel / confetti melayang ---------- */
+/* Naik dari bawah layar ke atas sambil melayang ke samping (--drift) dan
+   berputar (--rotate). transform + opacity saja -> ringan untuk GPU/HP. */
+.closed-particle-dot,
+.closed-particle-strip {
+  position: absolute;
+  bottom: -5%;
+  opacity: 0;
+  animation-name: closed-particle-rise;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+.closed-particle-dot {
+  border-radius: 9999px;
+}
+
+.closed-particle-strip {
+  border-radius: 2px;
+}
+
+@keyframes closed-particle-rise {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  10% {
+    opacity: 0.7;
+  }
+  85% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--drift), -115vh) rotate(var(--rotate));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .closed-aurora,
+  .closed-grid,
+  .closed-glow-a,
+  .closed-glow-b,
+  .closed-photo-zoom,
+  .closed-badge,
+  .closed-particle-dot,
+  .closed-particle-strip {
+    animation: none !important;
+  }
+}
+
 /* ---------- Layar penutup pendaftaran ---------- */
 /* Elemen di layar penutup muncul sendiri (fade + naik) tanpa perlu scroll,
    delay-nya diatur per elemen lewat inline style animationDelay. */
